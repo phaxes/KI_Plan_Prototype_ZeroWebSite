@@ -17,13 +17,11 @@ class ShopController
         $title = 'Shop';
         $pageTitle = 'Unser Shop';
 
-        echo View::render('layouts/base', [
-            'content' => View::render('shop/index', [
-                'products' => $products,
-                'page' => $page,
-                'limit' => $limit,
-                'pageTitle' => $pageTitle,
-            ], false),
+        echo View::render('shop/index', [
+            'products' => $products,
+            'page' => $page,
+            'limit' => $limit,
+            'pageTitle' => $pageTitle,
             'title' => $title,
         ]);
     }
@@ -34,7 +32,7 @@ class ShopController
 
         if (!$productId) {
             http_response_code(404);
-            echo View::render('errors/404', [], false);
+            echo View::render('errors/404', []);
             return;
         }
 
@@ -42,18 +40,16 @@ class ShopController
 
         if (!$product || !$product['active']) {
             http_response_code(404);
-            echo View::render('errors/404', [], false);
+            echo View::render('errors/404', []);
             return;
         }
 
         $title = View::escape($product['name']);
         $pageTitle = 'Produkt';
 
-        echo View::render('layouts/base', [
-            'content' => View::render('shop/show', [
-                'product' => $product,
-                'pageTitle' => $pageTitle,
-            ], false),
+        echo View::render('shop/show', [
+            'product' => $product,
+            'pageTitle' => $pageTitle,
             'title' => $title,
         ]);
     }

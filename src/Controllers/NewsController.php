@@ -17,13 +17,11 @@ class NewsController
         $title = 'News';
         $pageTitle = 'Neueste News';
 
-        echo View::render('layouts/base', [
-            'content' => View::render('news/index', [
-                'news' => $news,
-                'page' => $page,
-                'limit' => $limit,
-                'pageTitle' => $pageTitle,
-            ], false),
+        echo View::render('news/index', [
+            'news' => $news,
+            'page' => $page,
+            'limit' => $limit,
+            'pageTitle' => $pageTitle,
             'title' => $title,
         ]);
     }
@@ -34,7 +32,7 @@ class NewsController
 
         if (!$postId) {
             http_response_code(404);
-            echo View::render('errors/404', [], false);
+            echo View::render('errors/404', []);
             return;
         }
 
@@ -42,18 +40,16 @@ class NewsController
 
         if (!$article || $article['type'] !== 'news' || !$article['published']) {
             http_response_code(404);
-            echo View::render('errors/404', [], false);
+            echo View::render('errors/404', []);
             return;
         }
 
         $title = View::escape($article['title']);
         $pageTitle = 'News';
 
-        echo View::render('layouts/base', [
-            'content' => View::render('news/show', [
-                'article' => $article,
-                'pageTitle' => $pageTitle,
-            ], false),
+        echo View::render('news/show', [
+            'article' => $article,
+            'pageTitle' => $pageTitle,
             'title' => $title,
         ]);
     }

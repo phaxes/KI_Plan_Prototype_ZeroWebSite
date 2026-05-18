@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Firebase;
+use App\View;
 
 class HomeController
 {
@@ -12,6 +13,11 @@ class HomeController
         $latestBlog = Firebase::getPosts('blog', true, 3, 0);
         $featuredProducts = Firebase::getProducts(true, 3, 0);
 
-        require __DIR__ . '/../../templates/home/index.php';
+        echo View::render('home/index', [
+            'latestNews' => $latestNews,
+            'latestBlog' => $latestBlog,
+            'featuredProducts' => $featuredProducts,
+            'title' => 'Home',
+        ]);
     }
 }

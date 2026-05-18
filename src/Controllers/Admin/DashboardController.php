@@ -18,15 +18,13 @@ class DashboardController
         $title = 'Admin Dashboard';
         $pageTitle = 'Dashboard';
 
-        echo View::render('layouts/admin', [
-            'content' => View::render('admin/dashboard', [
-                'news' => $news,
-                'blog' => $blog,
-                'newsCount' => count($news),
-                'blogCount' => count($blog),
-                'productCount' => count($products),
-            ], false),
+        echo View::render('admin/dashboard', [
+            'news' => $news,
+            'blog' => $blog,
+            'newsCount' => count($news),
+            'blogCount' => count($blog),
+            'productCount' => count($products),
             'title' => $title,
-        ]);
+        ], 'layouts/admin');
     }
 }

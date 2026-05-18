@@ -15,10 +15,8 @@ class AuthController
         $title = 'Login';
         $pageTitle = 'Anmelden';
 
-        echo View::render('layouts/base', [
-            'content' => View::render('auth/login', [
-                'pageTitle' => $pageTitle,
-            ], false),
+        echo View::render('auth/login', [
+            'pageTitle' => $pageTitle,
             'title' => $title,
         ]);
     }
@@ -30,10 +28,8 @@ class AuthController
         $title = 'Registrieren';
         $pageTitle = 'Registrieren';
 
-        echo View::render('layouts/base', [
-            'content' => View::render('auth/register', [
-                'pageTitle' => $pageTitle,
-            ], false),
+        echo View::render('auth/register', [
+            'pageTitle' => $pageTitle,
             'title' => $title,
         ]);
     }

@@ -18,13 +18,11 @@ class CheckoutController
         $isTestMode = StripeHelper::isTestMode();
         $email = Auth::isLoggedIn() ? View::escape($_SESSION['email']) : '';
 
-        echo View::render('layouts/base', [
-            'content' => View::render('checkout/index', [
-                'pageTitle' => $pageTitle,
-                'stripeKey' => $stripeKey,
-                'isTestMode' => $isTestMode,
-                'email' => $email,
-            ], false),
+        echo View::render('checkout/index', [
+            'pageTitle' => $pageTitle,
+            'stripeKey' => $stripeKey,
+            'isTestMode' => $isTestMode,
+            'email' => $email,
             'title' => $title,
         ]);
     }
@@ -83,11 +81,9 @@ class CheckoutController
         $orderId = $_GET['orderId'] ?? 'ORDER_' . uniqid();
         $isLoggedIn = Auth::isLoggedIn();
 
-        echo View::render('layouts/base', [
-            'content' => View::render('checkout/success', [
-                'orderId' => $orderId,
-                'isLoggedIn' => $isLoggedIn,
-            ], false),
+        echo View::render('checkout/success', [
+            'orderId' => $orderId,
+            'isLoggedIn' => $isLoggedIn,
             'title' => $title,
         ]);
     }

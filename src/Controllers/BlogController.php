@@ -17,13 +17,11 @@ class BlogController
         $title = 'Blog';
         $pageTitle = 'Blog-Artikel';
 
-        echo View::render('layouts/base', [
-            'content' => View::render('blog/index', [
-                'articles' => $articles,
-                'page' => $page,
-                'limit' => $limit,
-                'pageTitle' => $pageTitle,
-            ], false),
+        echo View::render('blog/index', [
+            'articles' => $articles,
+            'page' => $page,
+            'limit' => $limit,
+            'pageTitle' => $pageTitle,
             'title' => $title,
         ]);
     }
@@ -34,7 +32,7 @@ class BlogController
 
         if (!$postId) {
             http_response_code(404);
-            echo View::render('errors/404', [], false);
+            echo View::render('errors/404', []);
             return;
         }
 
@@ -42,18 +40,16 @@ class BlogController
 
         if (!$article || $article['type'] !== 'blog' || !$article['published']) {
             http_response_code(404);
-            echo View::render('errors/404', [], false);
+            echo View::render('errors/404', []);
             return;
         }
 
         $title = View::escape($article['title']);
         $pageTitle = 'Blog';
 
-        echo View::render('layouts/base', [
-            'content' => View::render('blog/show', [
-                'article' => $article,
-                'pageTitle' => $pageTitle,
-            ], false),
+        echo View::render('blog/show', [
+            'article' => $article,
+            'pageTitle' => $pageTitle,
             'title' => $title,
         ]);
     }

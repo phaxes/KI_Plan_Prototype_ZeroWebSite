@@ -11,10 +11,8 @@ class CartController
         $title = 'Warenkorb';
         $pageTitle = 'Dein Warenkorb';
 
-        echo View::render('layouts/base', [
-            'content' => View::render('cart/index', [
-                'pageTitle' => $pageTitle,
-            ], false),
+        echo View::render('cart/index', [
+            'pageTitle' => $pageTitle,
             'title' => $title,
         ]);
     }

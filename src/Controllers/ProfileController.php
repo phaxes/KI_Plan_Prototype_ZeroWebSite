@@ -14,12 +14,10 @@ class ProfileController
         $title = 'Profil';
         $pageTitle = 'Mein Profil';
 
-        echo View::render('layouts/base', [
-            'content' => View::render('profile/index', [
-                'pageTitle' => $pageTitle,
-                'displayName' => $_SESSION['displayName'] ?? '',
-                'email' => $_SESSION['email'] ?? '',
-            ], false),
+        echo View::render('profile/index', [
+            'pageTitle' => $pageTitle,
+            'displayName' => $_SESSION['displayName'] ?? '',
+            'email' => $_SESSION['email'] ?? '',
             'title' => $title,
         ]);
     }

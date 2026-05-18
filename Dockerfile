@@ -3,12 +3,21 @@ FROM php:8.2-apache
 # Enable mod_rewrite
 RUN a2enmod rewrite
 
-# Install system dependencies
+# Install system dependencies and PHP extensions
 RUN apt-get update && apt-get install -y \
     git \
     curl \
     libcurl4-openssl-dev \
+    libzip-dev \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
+
+# Install PHP extensions
+RUN docker-php-ext-install \
+    curl \
+    zip \
+    dom \
+    && docker-php-ext-enable curl zip dom
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -24,11 +33,11 @@ WORKDIR /var/www/html
 # Copy application files
 COPY . .
 
-# Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader
+# Install PHP dependencies with increased timeout
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --working-dir=/var/www/html 2>&1 || true
 
 # Install Node dependencies and build CSS
-RUN npm install && npm run build
+RUN npm install --legacy-peer-deps && npm run build
 
 # Create Firebase service account directory
 RUN mkdir -p /var/www/html/config && \

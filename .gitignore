@@ -1,0 +1,49 @@
+# Environment variables (sensitive data)
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+vendor/
+composer.lock
+
+# Build artifacts
+public/css/app.css
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+composer-debug.log*
+
+# Temporary files
+tmp/
+temp/
+.cache/
+
+# Firebase
+firebase-key.json
+serviceAccountKey.json
+
+# Stripe
+.stripe/
+
+# Local testing
+.php_cs.cache
+.phpunit.result.cache
+
+# Render deployment
+.render/

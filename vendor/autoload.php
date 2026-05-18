@@ -1,5 +1,11 @@
 <?php
-// Minimal autoloader for testing without external dependencies
+// Check for real composer autoloader first (when dependencies are installed)
+if (file_exists(__DIR__ . '/composer/autoload_real.php')) {
+    return require __DIR__ . '/composer/autoload_real.php';
+}
+
+// Fallback: Minimal autoloader for App namespace only
+// External dependencies (Firebase, Stripe, Mailchimp) will gracefully degrade
 spl_autoload_register(function ($class) {
     $prefix = 'App\\';
     if (strpos($class, $prefix) === 0) {
@@ -11,20 +17,6 @@ spl_autoload_register(function ($class) {
         }
     }
     return false;
-});
-
-// Create stub classes for external dependencies (Firebase, Stripe, Mailchimp)
-if (!class_exists('Kreait\Firebase\Factory')) {
-    class_alias('stdClass', 'Kreait\Firebase\Factory');
-}
-if (!class_exists('Stripe\Stripe')) {
-    class_alias('stdClass', 'Stripe\Stripe');
-}
-if (!class_exists('Stripe\PaymentIntent')) {
-    class_alias('stdClass', 'Stripe\PaymentIntent');
-}
-if (!class_exists('Stripe\Charge')) {
-    class_alias('stdClass', 'Stripe\Charge');
-}
+}, true, true);
 
 return array();

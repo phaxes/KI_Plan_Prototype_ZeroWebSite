@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= $title ?? 'Zero-Cost Website' ?></title>
+    <link rel="stylesheet" href="/public/css/app.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+    <!-- Stripe JS -->
+    <script src="https://js.stripe.com/v3/"></script>
+    <!-- SimpleMDE for admin -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+    <?php require __DIR__ . '/../partials/header.php'; ?>
+
+    <main class="min-h-screen">
+        <?= $content ?? '' ?>
+    </main>
+
+    <?php require __DIR__ . '/../partials/footer.php'; ?>
+
+    <script src="/public/js/app.js"></script>
+    <script src="/public/js/firebase-init.js"></script>
+    <script src="/public/js/auth.js"></script>
+    <script src="/public/js/cart.js"></script>
+    <script src="/public/js/stripe.js"></script>
+</body>
+</html>

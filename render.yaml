@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: zero-cost-website
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    buildCommand: npm install && npm run build && composer install
+    startCommand: apache2-foreground
+    plan: free
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: FIREBASE_PROJECT_ID
+        value: ${FIREBASE_PROJECT_ID}
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        value: ${FIREBASE_SERVICE_ACCOUNT_JSON}
+      - key: FIREBASE_API_KEY
+        value: ${FIREBASE_API_KEY}
+      - key: FIREBASE_AUTH_DOMAIN
+        value: ${FIREBASE_AUTH_DOMAIN}
+      - key: STRIPE_SECRET_KEY
+        value: ${STRIPE_SECRET_KEY}
+      - key: STRIPE_PUBLISHABLE_KEY
+        value: ${STRIPE_PUBLISHABLE_KEY}
+      - key: MAILCHIMP_API_KEY
+        value: ${MAILCHIMP_API_KEY}
+      - key: MAILCHIMP_SERVER_PREFIX
+        value: ${MAILCHIMP_SERVER_PREFIX}
+      - key: MAILCHIMP_LIST_ID
+        value: ${MAILCHIMP_LIST_ID}

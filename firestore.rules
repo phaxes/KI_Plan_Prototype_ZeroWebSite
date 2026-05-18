@@ -1,0 +1,140 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===== Helper Functions =====
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    // ===== Posts Collection (News & Blog) =====
+    // Public: Read published posts
+    // Auth: Create own posts
+    // Admin: Manage all posts
+
+    match /posts/{postId} {
+      // Anyone can read published posts
+      allow read: if resource.data.published == true;
+
+      // Authenticated users can read unpublished posts they own
+      allow read: if isAuthenticated() && resource.data.authorId == request.auth.uid;
+
+      // Only authenticated users can create posts
+      allow create: if isAuthenticated() &&
+                       request.resource.data.authorId == request.auth.uid &&
+                       request.resource.data.createdAt == request.time &&
+                       request.resource.data.title.size() <= 500 &&
+                       !('isVerified' in request.resource.data.diff(resource.data).affectedKeys());
+
+      // Only post owner or admin can update (with field restrictions)
+      allow update: if (isAdmin() || (isAuthenticated() && resource.data.authorId == request.auth.uid)) &&
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'content', 'published', 'tags', 'imageUrl', 'updatedAt']) &&
+                       request.resource.data.updatedAt == request.time;
+
+      // Only post owner or admin can delete
+      allow delete: if isAdmin() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
+    }
+
+    // ===== Products Collection =====
+    // Anyone: Read active products
+    // Admin: Create, update, delete products
+
+    match /products/{productId} {
+      // Anyone can read active products
+      allow read: if resource.data.active == true;
+
+      // Only admin can read inactive products
+      allow read: if isAdmin();
+
+      // Only admin can create products
+      allow create: if isAdmin();
+
+      // Only admin can update products
+      allow update: if isAdmin();
+
+      // Only admin can delete products
+      allow delete: if isAdmin();
+    }
+
+    // ===== Users Collection =====
+    // Users: Read/write own data (with restrictions)
+    // Admin: Read all users
+
+    match /users/{userId} {
+      // Users can only read their own profile
+      allow read: if isOwner(userId);
+
+      // Admins can read all profiles
+      allow read: if isAdmin();
+
+      // Users can only create their own profile (on registration)
+      allow create: if isOwner(userId) &&
+                       !('isAdmin' in request.resource.data) &&
+                       request.resource.data.email == request.auth.token.email;
+
+      // Users can update their own profile (limited fields)
+      allow update: if isOwner(userId) &&
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'address', 'updatedAt']) &&
+                       !('email' in request.resource.data.diff(resource.data).affectedKeys()) &&
+                       !('isAdmin' in request.resource.data.diff(resource.data).affectedKeys());
+
+      // Users cannot delete their own profile
+      allow delete: if false;
+    }
+
+    // ===== Subscribers Collection =====
+    // Anyone: Subscribe (create)
+    // Admin: Read and manage subscribers
+
+    match /subscribers/{email} {
+      // Anyone can subscribe
+      allow create: if true;
+
+      // Only admin can read subscribers
+      allow read: if isAdmin();
+
+      // Only admin can update subscribers
+      allow update: if isAdmin();
+
+      // Only admin can delete subscribers
+      allow delete: if isAdmin();
+    }
+
+    // ===== Orders Collection =====
+    // Users: Read own orders
+    // Admin: Read all orders
+
+    match /orders/{orderId} {
+      // Users can read their own orders
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
+      // Admins can read all orders
+      allow read: if isAdmin();
+
+      // Users can create orders
+      allow create: if isAuthenticated() &&
+                       request.resource.data.userId == request.auth.uid &&
+                       request.resource.data.createdAt == request.time;
+
+      // Admins can update order status
+      allow update: if isAdmin();
+
+      // No deletion of orders (audit trail)
+      allow delete: if false;
+    }
+
+    // ===== Default: Deny all =====
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

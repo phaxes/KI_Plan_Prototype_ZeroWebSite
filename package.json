@@ -1,0 +1,15 @@
+{
+  "name": "zero-cost-website",
+  "version": "1.0.0",
+  "description": "Professional CMS & Shop website",
+  "scripts": {
+    "dev": "tailwindcss -i ./public/css/input.css -o ./public/css/app.css --watch",
+    "build": "NODE_ENV=production tailwindcss -i ./public/css/input.css -o ./public/css/app.css --minify",
+    "serve": "php -S localhost:8000"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.3",
+    "postcss": "^8.4.36",
+    "autoprefixer": "^10.4.18"
+  }
+}

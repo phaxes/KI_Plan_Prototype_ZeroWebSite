@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     libcurl4-openssl-dev \
     libzip-dev \
+    libxml2-dev \
     unzip \
     && rm -rf /var/lib/apt/lists/*
 

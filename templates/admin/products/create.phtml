@@ -1,0 +1,47 @@
+<div class="max-w-3xl">
+    <h1 class="text-3xl font-bold mb-8"><?= htmlspecialchars($pageTitle) ?></h1>
+
+    <form method="POST" action="/admin/products/store" class="bg-white rounded shadow p-8">
+        <div class="mb-6">
+            <label class="block text-gray-700 font-semibold mb-2">Produktname *</label>
+            <input type="text" name="name" required class="w-full px-4 py-2 border rounded" placeholder="z.B. Premium Widget">
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-gray-700 font-semibold mb-2">Beschreibung</label>
+            <textarea name="description" class="w-full px-4 py-2 border rounded" rows="4" placeholder="Produktbeschreibung..."></textarea>
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-gray-700 font-semibold mb-2">Preis (€) *</label>
+            <input type="number" name="price" required step="0.01" class="w-full px-4 py-2 border rounded" placeholder="19.99">
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-gray-700 font-semibold mb-2">Bild-URL</label>
+            <input type="url" name="imageUrl" class="w-full px-4 py-2 border rounded" placeholder="https://example.com/image.jpg">
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-gray-700 font-semibold mb-2">Kategorie</label>
+            <input type="text" name="category" class="w-full px-4 py-2 border rounded" placeholder="z.B. Software">
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-gray-700 font-semibold mb-2">Bestand *</label>
+            <input type="number" name="stock" required class="w-full px-4 py-2 border rounded" placeholder="10">
+        </div>
+
+        <div class="mb-6">
+            <label class="flex items-center">
+                <input type="checkbox" name="active" value="1" class="w-4 h-4 text-primary rounded">
+                <span class="ml-2 text-gray-700">Produkt aktiv</span>
+            </label>
+        </div>
+
+        <div class="flex gap-4">
+            <button type="submit" class="bg-primary text-white px-6 py-2 rounded hover:bg-blue-600 transition">Speichern</button>
+            <a href="/admin/products" class="px-6 py-2 border rounded hover:bg-gray-100 transition">Abbrechen</a>
+        </div>
+    </form>
+</div>

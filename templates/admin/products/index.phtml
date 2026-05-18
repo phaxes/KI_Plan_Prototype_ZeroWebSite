@@ -1,0 +1,42 @@
+<div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold"><?= htmlspecialchars($pageTitle) ?></h1>
+    <a href="/admin/products/create" class="bg-primary text-white px-6 py-2 rounded hover:bg-blue-600 transition">+ Neues Produkt</a>
+</div>
+
+<div class="bg-white rounded shadow overflow-hidden">
+    <table class="w-full">
+        <thead class="bg-gray-100 border-b">
+            <tr>
+                <th class="px-6 py-3 text-left">Name</th>
+                <th class="px-6 py-3 text-left">Preis</th>
+                <th class="px-6 py-3 text-left">Bestand</th>
+                <th class="px-6 py-3 text-left">Status</th>
+                <th class="px-6 py-3 text-right">Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if (!empty($products)): ?>
+                <?php foreach ($products as $item): ?>
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="px-6 py-4"><?= htmlspecialchars(substr($item['name'], 0, 30)) ?></td>
+                        <td class="px-6 py-4"><?= number_format($item['price'], 2, ',', '.') ?> €</td>
+                        <td class="px-6 py-4"><?= $item['stock'] ?> Stk.</td>
+                        <td class="px-6 py-4">
+                            <span class="px-3 py-1 rounded text-sm <?= $item['active'] ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' ?>">
+                                <?= $item['active'] ? '✅ Aktiv' : '❌ Inaktiv' ?>
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <a href="/admin/products/<?= htmlspecialchars($item['id']) ?>/edit" class="text-primary hover:text-blue-600 transition text-sm mr-4">Bearbeiten</a>
+                            <button onclick="deleteProduct('<?= htmlspecialchars($item['id']) ?>')" class="text-red-600 hover:text-red-700 transition text-sm">Löschen</button>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <tr>
+                    <td colspan="5" class="px-6 py-8 text-center text-gray-600">Keine Produkte vorhanden</td>
+                </tr>
+            <?php endif; ?>
+        </tbody>
+    </table>
+</div>

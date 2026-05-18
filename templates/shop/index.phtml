@@ -1,0 +1,44 @@
+<section class="py-12">
+    <div class="container mx-auto px-4">
+        <h1 class="text-4xl font-bold mb-8"><?= htmlspecialchars($pageTitle) ?></h1>
+
+        <?php if (!empty($products)): ?>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                <?php foreach ($products as $product): ?>
+                    <article class="bg-white rounded shadow hover:shadow-lg transition overflow-hidden">
+                        <?php if (!empty($product['imageUrl'])): ?>
+                            <img src="<?= htmlspecialchars($product['imageUrl']) ?>" alt="Produkt" class="w-full h-40 object-cover">
+                        <?php else: ?>
+                            <div class="w-full h-40 bg-gray-200 flex items-center justify-center">
+                                <span class="text-gray-400">Kein Bild</span>
+                            </div>
+                        <?php endif; ?>
+                        <div class="p-6">
+                            <h3 class="text-xl font-bold mb-2 line-clamp-2"><?= htmlspecialchars($product['name']) ?></h3>
+                            <p class="text-gray-600 line-clamp-2 mb-4"><?= htmlspecialchars($product['description'] ?? '') ?></p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-2xl font-bold text-primary"><?= number_format($product['price'], 2, ',', '.') ?> €</span>
+                                <a href="/shop/<?= htmlspecialchars($product['id']) ?>" class="bg-primary text-white px-4 py-2 rounded hover:bg-blue-600 transition">Details</a>
+                            </div>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- Pagination -->
+            <div class="flex justify-center gap-2 mt-12">
+                <?php if ($page > 1): ?>
+                    <a href="/shop?page=<?= $page - 1 ?>" class="px-4 py-2 border rounded hover:bg-gray-100">← Zurück</a>
+                <?php endif; ?>
+                <span class="px-4 py-2">Seite <?= $page ?></span>
+                <?php if (count($products) >= $limit): ?>
+                    <a href="/shop?page=<?= $page + 1 ?>" class="px-4 py-2 border rounded hover:bg-gray-100">Weiter →</a>
+                <?php endif; ?>
+            </div>
+        <?php else: ?>
+            <div class="bg-gray-100 p-12 rounded text-center">
+                <p class="text-gray-600 text-lg">Noch keine Produkte verfügbar</p>
+            </div>
+        <?php endif; ?>
+    </div>
+</section>

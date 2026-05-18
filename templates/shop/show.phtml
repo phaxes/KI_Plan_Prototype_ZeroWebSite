@@ -1,0 +1,51 @@
+<section class="py-12">
+    <div class="container mx-auto px-4 max-w-4xl">
+        <a href="/shop" class="text-primary hover:text-blue-600 transition mb-8 inline-block">← Zurück zum Shop</a>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Product Image -->
+            <div>
+                <?php if (!empty($product['imageUrl'])): ?>
+                    <img src="<?= htmlspecialchars($product['imageUrl']) ?>" alt="Produkt" class="w-full rounded shadow">
+                <?php else: ?>
+                    <div class="w-full h-96 bg-gray-200 rounded flex items-center justify-center">
+                        <span class="text-gray-400 text-xl">Kein Bild verfügbar</span>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Product Info -->
+            <div>
+                <h1 class="text-4xl font-bold mb-4"><?= htmlspecialchars($product['name']) ?></h1>
+
+                <?php if (!empty($product['category'])): ?>
+                    <p class="text-gray-600 mb-4">Kategorie: <strong><?= htmlspecialchars($product['category']) ?></strong></p>
+                <?php endif; ?>
+
+                <div class="text-3xl font-bold text-primary mb-6"><?= number_format($product['price'], 2, ',', '.') ?> €</div>
+
+                <p class="text-gray-700 leading-relaxed mb-8">
+                    <?= nl2br(htmlspecialchars($product['description'])) ?>
+                </p>
+
+                <div class="flex items-center gap-4 mb-8">
+                    <input type="number" id="quantity" min="1" value="1" class="w-20 px-4 py-2 border rounded">
+                    <button onclick="addToCart('<?= htmlspecialchars($product['id']) ?>', '<?= htmlspecialchars($product['name']) ?>', <?= $product['price'] ?>)"
+                            class="bg-primary text-white px-6 py-2 rounded hover:bg-blue-600 transition font-semibold">
+                        In den Warenkorb
+                    </button>
+                </div>
+
+                <div class="bg-blue-50 p-4 rounded mb-8">
+                    <p class="text-sm text-gray-700">
+                        <strong>Verfügbarkeit:</strong> <?= $product['stock'] > 0 ? 'Verfügbar (' . $product['stock'] . ' Stück)' : 'Nicht verfügbar' ?>
+                    </p>
+                </div>
+
+                <div class="border-t pt-8">
+                    <a href="/shop" class="text-primary hover:text-blue-600 transition font-semibold">← Alle Produkte</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

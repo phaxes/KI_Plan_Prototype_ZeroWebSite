@@ -1,0 +1,38 @@
+<section class="py-12">
+    <div class="container mx-auto px-4 max-w-3xl">
+        <a href="/news" class="text-primary hover:text-blue-600 transition mb-8 inline-block">← Zurück zu News</a>
+
+        <article>
+            <?php if (!empty($article['imageUrl'])): ?>
+                <img src="<?= htmlspecialchars($article['imageUrl']) ?>" alt="News" class="w-full rounded shadow mb-8">
+            <?php else: ?>
+                <div class="w-full h-96 bg-gradient-to-r from-primary to-secondary rounded mb-8"></div>
+            <?php endif; ?>
+
+            <h1 class="text-4xl font-bold mb-4"><?= htmlspecialchars($article['title']) ?></h1>
+
+            <div class="flex gap-4 items-center text-gray-600 mb-8 flex-wrap">
+                <time><?= $article['createdAt']->format('d.m.Y H:i') ?? date('d.m.Y') ?></time>
+                <?php if (!empty($article['authorId'])): ?>
+                    <span>von <strong><?= htmlspecialchars($article['authorId']) ?></strong></span>
+                <?php endif; ?>
+            </div>
+
+            <?php if (!empty($article['tags'])): ?>
+                <div class="flex gap-2 flex-wrap mb-8">
+                    <?php foreach ($article['tags'] as $tag): ?>
+                        <span class="text-xs bg-gray-200 px-3 py-1 rounded"><?= htmlspecialchars($tag) ?></span>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <div class="prose max-w-none mb-8">
+                <?= nl2br(htmlspecialchars($article['content'])) ?>
+            </div>
+
+            <div class="border-t pt-8">
+                <a href="/news" class="bg-primary text-white px-6 py-3 rounded hover:bg-blue-600 transition">Alle News</a>
+            </div>
+        </article>
+    </div>
+</section>

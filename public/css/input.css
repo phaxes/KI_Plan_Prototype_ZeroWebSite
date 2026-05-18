@@ -1,6 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Space+Mono:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    body {
+        @apply font-mono antialiased;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        @apply font-serif font-black;
+    }
+
+    h1 {
+        @apply text-6xl leading-tight;
+    }
+
+    h2 {
+        @apply text-5xl leading-snug;
+    }
+
+    h3 {
+        @apply text-4xl leading-snug;
+    }
+
+    h4 {
+        @apply text-3xl;
+    }
+
+    h5 {
+        @apply text-2xl;
+    }
+
+    h6 {
+        @apply text-xl;
+    }
+}
+
+@layer components {
+    .btn-primary {
+        @apply bg-primary text-paper px-6 py-2 border-2 border-primary font-mono uppercase tracking-widest text-xs hover:bg-transparent hover:text-primary transition;
+    }
+
+    .btn-outline {
+        @apply border-2 border-ink text-ink px-6 py-2 font-mono uppercase tracking-widest text-xs hover:bg-ink hover:text-paper transition;
+    }
+
+    .card-brutal {
+        @apply border-2 border-ink bg-paper p-6 hover:border-primary transition;
+    }
+
+    .section-dark {
+        @apply bg-void text-paper py-24;
+    }
+
+    .section-light {
+        @apply bg-paper text-ink py-24;
+    }
+}
 
 @layer utilities {
     .line-clamp-2 {

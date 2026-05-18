@@ -1,23 +1,23 @@
-<header class="bg-white shadow sticky top-0 z-50">
+<header class="bg-paper border-b-2 border-ink sticky top-0 z-50">
     <nav class="container mx-auto px-4 py-4 flex justify-between items-center">
-        <a href="/" class="text-2xl font-bold text-primary">ZeroWeb</a>
+        <a href="/" class="font-serif text-3xl tracking-tight text-ink">ZeroWeb</a>
 
-        <div class="hidden md:flex gap-6">
-            <a href="/news" class="text-gray-700 hover:text-primary transition">News</a>
-            <a href="/blog" class="text-gray-700 hover:text-primary transition">Blog</a>
-            <a href="/shop" class="text-gray-700 hover:text-primary transition">Shop</a>
+        <div class="hidden md:flex gap-8">
+            <a href="/news" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition">News</a>
+            <a href="/blog" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition">Blog</a>
+            <a href="/shop" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition">Shop</a>
             <?php if (isset($_SESSION['userId'])): ?>
-                <a href="/profile" class="text-gray-700 hover:text-primary transition">Profil</a>
-                <a href="/logout" class="text-gray-700 hover:text-primary transition">Logout</a>
+                <a href="/profile" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition">Profil</a>
+                <a href="/logout" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition">Logout</a>
             <?php else: ?>
-                <a href="/login" class="text-gray-700 hover:text-primary transition">Login</a>
-                <a href="/register" class="text-gray-700 hover:text-primary transition">Registrieren</a>
+                <a href="/login" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition">Login</a>
+                <a href="/register" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition">Registrieren</a>
             <?php endif; ?>
-            <a href="/cart" class="bg-primary text-white px-4 py-2 rounded hover:bg-blue-600 transition">
+            <a href="/cart" class="border-2 border-ink text-ink px-4 py-2 hover:border-primary hover:text-primary transition font-mono text-xs uppercase tracking-widest">
                 Warenkorb <span id="cart-count" class="ml-1">0</span>
             </a>
             <?php if (isset($_SESSION['isAdmin']) && $_SESSION['isAdmin']): ?>
-                <a href="/admin" class="bg-secondary text-white px-4 py-2 rounded hover:bg-green-600 transition">Admin</a>
+                <a href="/admin" class="border-2 border-primary text-primary px-4 py-2 hover:bg-primary hover:text-paper transition font-mono text-xs uppercase tracking-widest">Admin</a>
             <?php endif; ?>
         </div>
 
@@ -26,21 +26,21 @@
     </nav>
 
     <!-- Mobile menu -->
-    <div id="mobile-menu" class="hidden md:hidden bg-gray-100 border-t">
+    <div id="mobile-menu" class="hidden md:hidden bg-void text-paper border-t-2 border-primary">
         <div class="container mx-auto px-4 py-4 flex flex-col gap-2">
-            <a href="/news" class="text-gray-700 hover:text-primary transition py-2">News</a>
-            <a href="/blog" class="text-gray-700 hover:text-primary transition py-2">Blog</a>
-            <a href="/shop" class="text-gray-700 hover:text-primary transition py-2">Shop</a>
+            <a href="/news" class="font-mono text-xs uppercase tracking-widest text-paper hover:text-primary transition py-2">News</a>
+            <a href="/blog" class="font-mono text-xs uppercase tracking-widest text-paper hover:text-primary transition py-2">Blog</a>
+            <a href="/shop" class="font-mono text-xs uppercase tracking-widest text-paper hover:text-primary transition py-2">Shop</a>
             <?php if (isset($_SESSION['userId'])): ?>
-                <a href="/profile" class="text-gray-700 hover:text-primary transition py-2">Profil</a>
-                <a href="/logout" class="text-gray-700 hover:text-primary transition py-2">Logout</a>
+                <a href="/profile" class="font-mono text-xs uppercase tracking-widest text-paper hover:text-primary transition py-2">Profil</a>
+                <a href="/logout" class="font-mono text-xs uppercase tracking-widest text-paper hover:text-primary transition py-2">Logout</a>
             <?php else: ?>
-                <a href="/login" class="text-gray-700 hover:text-primary transition py-2">Login</a>
-                <a href="/register" class="text-gray-700 hover:text-primary transition py-2">Registrieren</a>
+                <a href="/login" class="font-mono text-xs uppercase tracking-widest text-paper hover:text-primary transition py-2">Login</a>
+                <a href="/register" class="font-mono text-xs uppercase tracking-widest text-paper hover:text-primary transition py-2">Registrieren</a>
             <?php endif; ?>
-            <a href="/cart" class="bg-primary text-white px-4 py-2 rounded py-2">Warenkorb <span id="cart-count-mobile" class="ml-1">0</span></a>
+            <a href="/cart" class="border-2 border-paper text-paper px-4 py-2 hover:border-primary hover:text-primary transition font-mono text-xs uppercase tracking-widest py-2">Warenkorb <span id="cart-count-mobile" class="ml-1">0</span></a>
             <?php if (isset($_SESSION['isAdmin']) && $_SESSION['isAdmin']): ?>
-                <a href="/admin" class="bg-secondary text-white px-4 py-2 rounded py-2">Admin</a>
+                <a href="/admin" class="border-2 border-primary text-primary px-4 py-2 hover:bg-primary hover:text-void transition font-mono text-xs uppercase tracking-widest py-2">Admin</a>
             <?php endif; ?>
         </div>
     </div>

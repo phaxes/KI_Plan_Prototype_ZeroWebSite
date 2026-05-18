@@ -1,45 +1,49 @@
-<footer class="bg-gray-900 text-gray-200 py-12">
-    <div class="container mx-auto px-4">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+<footer class="bg-void text-paper py-24 relative overflow-hidden">
+    <div class="absolute inset-0 text-9xl font-black opacity-5 flex items-center justify-center">
+        <?= date('Y') ?>
+    </div>
+
+    <div class="container mx-auto px-4 relative z-10">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-12">
             <!-- Brand -->
-            <div>
-                <h3 class="text-xl font-bold text-white mb-4">ZeroWeb</h3>
-                <p class="text-gray-400">Professionelle Webpräsenz zum Nulltarif.</p>
+            <div class="border-r-2 border-primary pr-8">
+                <h3 class="font-serif text-2xl font-black text-paper mb-4">ZeroWeb</h3>
+                <p class="text-muted">Professionelle Webpräsenz zum Nulltarif.</p>
             </div>
 
             <!-- Links -->
-            <div>
-                <h4 class="text-white font-semibold mb-4">Navigation</h4>
-                <ul class="space-y-2 text-gray-400">
-                    <li><a href="/news" class="hover:text-white transition">News</a></li>
-                    <li><a href="/blog" class="hover:text-white transition">Blog</a></li>
-                    <li><a href="/shop" class="hover:text-white transition">Shop</a></li>
+            <div class="border-r-2 border-primary pr-8">
+                <h4 class="font-mono text-xs uppercase tracking-widest text-primary mb-4">Navigation</h4>
+                <ul class="space-y-2 text-muted">
+                    <li><a href="/news" class="hover:text-paper transition">News</a></li>
+                    <li><a href="/blog" class="hover:text-paper transition">Blog</a></li>
+                    <li><a href="/shop" class="hover:text-paper transition">Shop</a></li>
                 </ul>
             </div>
 
             <!-- Support -->
-            <div>
-                <h4 class="text-white font-semibold mb-4">Support</h4>
-                <ul class="space-y-2 text-gray-400">
-                    <li><a href="#" class="hover:text-white transition">Kontakt</a></li>
-                    <li><a href="#" class="hover:text-white transition">Datenschutz</a></li>
-                    <li><a href="#" class="hover:text-white transition">Impressum</a></li>
+            <div class="border-r-2 border-primary pr-8">
+                <h4 class="font-mono text-xs uppercase tracking-widest text-primary mb-4">Support</h4>
+                <ul class="space-y-2 text-muted">
+                    <li><a href="#" class="hover:text-paper transition">Kontakt</a></li>
+                    <li><a href="#" class="hover:text-paper transition">Datenschutz</a></li>
+                    <li><a href="#" class="hover:text-paper transition">Impressum</a></li>
                 </ul>
             </div>
 
             <!-- Newsletter -->
             <div>
-                <h4 class="text-white font-semibold mb-4">Newsletter</h4>
-                <form id="newsletter-form" class="flex flex-col gap-2">
-                    <input type="email" name="email" placeholder="Deine E-Mail" class="px-4 py-2 rounded text-gray-900" required>
-                    <input type="text" name="name" placeholder="Dein Name" class="px-4 py-2 rounded text-gray-900">
-                    <button type="submit" class="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded transition">Abonnieren</button>
+                <h4 class="font-mono text-xs uppercase tracking-widest text-primary mb-4">Newsletter</h4>
+                <form id="newsletter-form" class="flex flex-col gap-4">
+                    <input type="email" name="email" placeholder="E-Mail" class="bg-transparent border-b-2 border-paper text-paper placeholder-muted px-0 py-2 focus:outline-none focus:border-primary transition" required>
+                    <input type="text" name="name" placeholder="Name" class="bg-transparent border-b-2 border-paper text-paper placeholder-muted px-0 py-2 focus:outline-none focus:border-primary transition">
+                    <button type="submit" class="border-2 border-paper text-paper hover:border-primary hover:text-primary px-4 py-2 font-mono text-xs uppercase tracking-widest transition mt-2">Abonnieren</button>
                 </form>
             </div>
         </div>
 
-        <div class="border-t border-gray-700 pt-8">
-            <p class="text-center text-gray-400">&copy; <?= date('Y') ?> ZeroWeb. Alle Rechte vorbehalten.</p>
+        <div class="border-t-2 border-primary mt-12 pt-8">
+            <p class="text-center text-muted font-mono text-xs">&copy; <?= date('Y') ?> ZEROWEB. ALLE RECHTE VORBEHALTEN.</p>
         </div>
     </div>
 

@@ -1,37 +1,37 @@
 <div class="max-w-3xl">
-    <h1 class="text-3xl font-bold mb-8"><?= htmlspecialchars($pageTitle) ?></h1>
+    <h1 class="font-serif text-5xl font-black mb-12"><?= htmlspecialchars($pageTitle) ?></h1>
 
-    <form method="POST" action="/admin/news/<?= htmlspecialchars($newsId) ?>/update" class="bg-white rounded shadow p-8">
-        <div class="mb-6">
-            <label class="block text-gray-700 font-semibold mb-2">Titel *</label>
-            <input type="text" name="title" required value="<?= htmlspecialchars($article['title']) ?>" class="w-full px-4 py-2 border rounded">
+    <form method="POST" action="/admin/news/<?= htmlspecialchars($newsId) ?>/update" class="border-2 border-ink p-12">
+        <div class="mb-8">
+            <label class="block font-mono text-xs uppercase tracking-widest text-ink font-black mb-3">Titel *</label>
+            <input type="text" name="title" required value="<?= htmlspecialchars($article['title']) ?>" class="w-full px-4 py-3 border-2 border-ink bg-paper text-ink font-mono focus:outline-none focus:border-primary transition">
         </div>
 
-        <div class="mb-6">
-            <label class="block text-gray-700 font-semibold mb-2">Bild-URL</label>
-            <input type="url" name="imageUrl" value="<?= htmlspecialchars($article['imageUrl'] ?? '') ?>" class="w-full px-4 py-2 border rounded">
+        <div class="mb-8">
+            <label class="block font-mono text-xs uppercase tracking-widest text-ink font-black mb-3">Bild-URL</label>
+            <input type="url" name="imageUrl" value="<?= htmlspecialchars($article['imageUrl'] ?? '') ?>" class="w-full px-4 py-3 border-2 border-ink bg-paper text-ink font-mono focus:outline-none focus:border-primary transition">
         </div>
 
-        <div class="mb-6">
-            <label class="block text-gray-700 font-semibold mb-2">Inhalt *</label>
-            <textarea id="editor" name="content" required class="w-full px-4 py-2 border rounded" rows="10"><?= htmlspecialchars($article['content']) ?></textarea>
+        <div class="mb-8">
+            <label class="block font-mono text-xs uppercase tracking-widest text-ink font-black mb-3">Inhalt *</label>
+            <textarea id="editor" name="content" required class="w-full px-4 py-3 border-2 border-ink bg-paper text-ink font-mono focus:outline-none focus:border-primary transition" rows="10"><?= htmlspecialchars($article['content']) ?></textarea>
         </div>
 
-        <div class="mb-6">
-            <label class="block text-gray-700 font-semibold mb-2">Tags (komma-getrennt)</label>
-            <input type="text" name="tags" value="<?= htmlspecialchars(implode(', ', $article['tags'] ?? [])) ?>" class="w-full px-4 py-2 border rounded">
+        <div class="mb-8">
+            <label class="block font-mono text-xs uppercase tracking-widest text-ink font-black mb-3">Tags (komma-getrennt)</label>
+            <input type="text" name="tags" value="<?= htmlspecialchars(implode(', ', $article['tags'] ?? [])) ?>" class="w-full px-4 py-3 border-2 border-ink bg-paper text-ink font-mono focus:outline-none focus:border-primary transition">
         </div>
 
-        <div class="mb-6">
-            <label class="flex items-center">
-                <input type="checkbox" name="published" value="1" <?= $article['published'] ? 'checked' : '' ?> class="w-4 h-4 text-primary rounded">
-                <span class="ml-2 text-gray-700">Veröffentlichen</span>
+        <div class="mb-8">
+            <label class="flex items-center cursor-pointer">
+                <input type="checkbox" name="published" value="1" <?= $article['published'] ? 'checked' : '' ?> class="w-6 h-6 border-2 border-ink bg-paper cursor-pointer accent-primary">
+                <span class="ml-3 font-mono text-sm uppercase tracking-widest text-ink font-black">Veröffentlichen</span>
             </label>
         </div>
 
         <div class="flex gap-4">
-            <button type="submit" class="bg-primary text-white px-6 py-2 rounded hover:bg-blue-600 transition">Speichern</button>
-            <a href="/admin/news" class="px-6 py-2 border rounded hover:bg-gray-100 transition">Abbrechen</a>
+            <button type="submit" class="bg-primary text-void border-2 border-primary px-6 py-3 hover:bg-transparent hover:text-primary transition font-mono text-xs uppercase tracking-widest font-black">Speichern</button>
+            <a href="/admin/news" class="border-2 border-ink text-ink px-6 py-3 hover:bg-ink hover:text-paper transition font-mono text-xs uppercase tracking-widest font-black">Abbrechen</a>
         </div>
     </form>
 </div>

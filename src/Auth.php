@@ -21,18 +21,69 @@ class Auth
             // Handle both file path (localhost) and direct JSON (Render)
             if (!file_exists($serviceAccountJson)) {
                 // If not a file path, assume it's direct JSON content
-                // Create temporary file for kreait library
-                $tempFile = sys_get_temp_dir() . '/firebase_sa_' . uniqid() . '.json';
-                file_put_contents($tempFile, $serviceAccountJson);
-                $serviceAccountJson = $tempFile;
+                // Validate it's actually JSON
+                $decoded = json_decode($serviceAccountJson, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    throw new \Exception('FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON: ' . json_last_error_msg());
+                }
+
+                // Ensure we have the required fields
+                $required = ['type', 'project_id', 'private_key', 'client_email'];
+                foreach ($required as $field) {
+                    if (!isset($decoded[$field]) || empty($decoded[$field])) {
+                        throw new \Exception("FIREBASE_SERVICE_ACCOUNT_JSON missing required field: $field");
+                    }
+                }
+
+                // Try to create temporary file for kreait library
+                $tempFile = self::createTempServiceAccountFile($serviceAccountJson);
+                if ($tempFile) {
+                    $serviceAccountJson = $tempFile;
+                } else {
+                    throw new \Exception('Could not create temporary service account file and direct JSON not supported by kreait');
+                }
             }
 
-            $factory = new Factory();
-            $firebase = $factory->withServiceAccount($serviceAccountJson);
-            self::$auth = $firebase->createAuth();
+            try {
+                $factory = new Factory();
+                $firebase = $factory->withServiceAccount($serviceAccountJson);
+                self::$auth = $firebase->createAuth();
+            } catch (\Exception $e) {
+                error_log('Firebase Auth Error: ' . $e->getMessage());
+                throw $e;
+            }
         }
 
         return self::$auth;
+    }
+
+    private static function createTempServiceAccountFile($jsonContent)
+    {
+        // Try multiple possible temp directories
+        $tempDirs = [
+            sys_get_temp_dir(),
+            '/tmp',
+            getcwd() . '/.cache',
+            __DIR__ . '/../.cache'
+        ];
+
+        foreach ($tempDirs as $dir) {
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0755, true);
+            }
+
+            if (is_dir($dir) && is_writable($dir)) {
+                $tempFile = $dir . '/firebase_sa_' . uniqid() . '.json';
+                if (file_put_contents($tempFile, $jsonContent) !== false) {
+                    @chmod($tempFile, 0600);
+                    error_log('Created temp service account file: ' . $tempFile);
+                    return $tempFile;
+                }
+            }
+        }
+
+        error_log('Could not create temp service account file in any directory. Tried: ' . implode(', ', $tempDirs));
+        return null;
     }
 
     /**

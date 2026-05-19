@@ -24,10 +24,21 @@ class Firebase
             // Handle both file path (localhost) and direct JSON (Render)
             if (!file_exists($serviceAccountJson)) {
                 // If not a file path, assume it's direct JSON content
-                // Create temporary file for kreait library
-                $tempFile = sys_get_temp_dir() . '/firebase_sa_' . uniqid() . '.json';
-                file_put_contents($tempFile, $serviceAccountJson);
-                $serviceAccountJson = $tempFile;
+                // Validate JSON first
+                $decoded = json_decode($serviceAccountJson, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    error_log('Firebase: Invalid JSON in FIREBASE_SERVICE_ACCOUNT_JSON: ' . json_last_error_msg());
+                    return null;
+                }
+
+                // Try to create temporary file for kreait library
+                $tempFile = self::createTempServiceAccountFile($serviceAccountJson);
+                if ($tempFile) {
+                    $serviceAccountJson = $tempFile;
+                } else {
+                    error_log('Firebase: Could not create temporary service account file');
+                    return null;
+                }
             }
 
             try {
@@ -40,6 +51,35 @@ class Firebase
         }
 
         return self::$instance;
+    }
+
+    private static function createTempServiceAccountFile($jsonContent)
+    {
+        // Try multiple possible temp directories
+        $tempDirs = [
+            sys_get_temp_dir(),
+            '/tmp',
+            getcwd() . '/.cache',
+            __DIR__ . '/../.cache'
+        ];
+
+        foreach ($tempDirs as $dir) {
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0755, true);
+            }
+
+            if (is_dir($dir) && is_writable($dir)) {
+                $tempFile = $dir . '/firebase_sa_' . uniqid() . '.json';
+                if (file_put_contents($tempFile, $jsonContent) !== false) {
+                    @chmod($tempFile, 0600);
+                    error_log('Created temp service account file: ' . $tempFile);
+                    return $tempFile;
+                }
+            }
+        }
+
+        error_log('Could not create temp service account file in any directory. Tried: ' . implode(', ', $tempDirs));
+        return null;
     }
 
     public static function firestore()

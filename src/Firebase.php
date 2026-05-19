@@ -62,6 +62,18 @@ class Firebase
         return self::$available;
     }
 
+    private static function normalizeTimestamp($value): \DateTime
+    {
+        if ($value instanceof \Google\Cloud\Core\Timestamp) {
+            $dt = $value->get();
+            return \DateTime::createFromInterface($dt);
+        }
+        if ($value instanceof \DateTimeInterface) {
+            return \DateTime::createFromInterface($value);
+        }
+        return new \DateTime();
+    }
+
     // ===== Posts (News/Blog) =====
 
     public static function getPosts($type = null, $published = null, $limit = 10, $offset = 0)
@@ -86,9 +98,12 @@ class Firebase
             $count = 0;
             foreach ($documents as $doc) {
                 if ($count >= $limit) break;
+                $data = $doc->data();
+                if (isset($data['createdAt'])) $data['createdAt'] = self::normalizeTimestamp($data['createdAt']);
+                if (isset($data['updatedAt'])) $data['updatedAt'] = self::normalizeTimestamp($data['updatedAt']);
                 $posts[] = [
                     'id' => $doc->id(),
-                    ...$doc->data()
+                    ...$data
                 ];
                 $count++;
             }
@@ -108,9 +123,12 @@ class Firebase
             $document = self::firestore()->collection('posts')->document($postId)->snapshot();
 
             if ($document->exists()) {
+                $data = $document->data();
+                if (isset($data['createdAt'])) $data['createdAt'] = self::normalizeTimestamp($data['createdAt']);
+                if (isset($data['updatedAt'])) $data['updatedAt'] = self::normalizeTimestamp($data['updatedAt']);
                 return [
                     'id' => $document->id(),
-                    ...$document->data()
+                    ...$data
                 ];
             }
 
@@ -167,7 +185,7 @@ class Firebase
             if (isset($data['tags'])) $updateData['tags'] = $data['tags'];
             if (isset($data['imageUrl'])) $updateData['imageUrl'] = $data['imageUrl'];
 
-            self::firestore()->collection('posts')->document($postId)->update($updateData);
+            self::firestore()->collection('posts')->document($postId)->set($updateData, ['merge' => true]);
 
             return true;
         } catch (\Exception $e) {
@@ -209,9 +227,12 @@ class Firebase
             $count = 0;
             foreach ($documents as $doc) {
                 if ($count >= $limit) break;
+                $data = $doc->data();
+                if (isset($data['createdAt'])) $data['createdAt'] = self::normalizeTimestamp($data['createdAt']);
+                if (isset($data['updatedAt'])) $data['updatedAt'] = self::normalizeTimestamp($data['updatedAt']);
                 $products[] = [
                     'id' => $doc->id(),
-                    ...$doc->data()
+                    ...$data
                 ];
                 $count++;
             }
@@ -231,9 +252,12 @@ class Firebase
             $document = self::firestore()->collection('products')->document($productId)->snapshot();
 
             if ($document->exists()) {
+                $data = $document->data();
+                if (isset($data['createdAt'])) $data['createdAt'] = self::normalizeTimestamp($data['createdAt']);
+                if (isset($data['updatedAt'])) $data['updatedAt'] = self::normalizeTimestamp($data['updatedAt']);
                 return [
                     'id' => $document->id(),
-                    ...$document->data()
+                    ...$data
                 ];
             }
 
@@ -292,7 +316,7 @@ class Firebase
             if (isset($data['stock'])) $updateData['stock'] = intval($data['stock']);
             if (isset($data['active'])) $updateData['active'] = $data['active'];
 
-            self::firestore()->collection('products')->document($productId)->update($updateData);
+            self::firestore()->collection('products')->document($productId)->set($updateData, ['merge' => true]);
 
             return true;
         } catch (\Exception $e) {

@@ -67,10 +67,13 @@ class NewsAdminController
                 header('Location: /admin/news');
                 exit;
             } else {
-                App::showNotification('Fehler beim Speichern', 'error');
+                header('Location: /admin/news/create?error=save_failed');
+                exit;
             }
         } catch (\Exception $e) {
             error_log('News create error: ' . $e->getMessage());
+            header('Location: /admin/news/create?error=exception');
+            exit;
         }
     }
 

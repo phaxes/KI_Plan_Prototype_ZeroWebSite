@@ -1,17 +1,17 @@
-<header class="bg-paper border-b-2 border-ink sticky top-0 z-50">
+<header id="site-header" class="bg-paper border-b-2 border-ink sticky top-0 z-50 transition-colors duration-300">
     <nav class="container mx-auto px-4 py-4 flex justify-between items-center">
         <a href="/" class="font-serif text-3xl tracking-tight text-ink">ZeroWeb</a>
 
         <div class="hidden md:flex gap-8">
-            <a href="/news" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition">News</a>
-            <a href="/blog" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition">Blog</a>
-            <a href="/shop" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition">Shop</a>
+            <a href="/news" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition" data-nav-link>News</a>
+            <a href="/blog" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition" data-nav-link>Blog</a>
+            <a href="/shop" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition" data-nav-link>Shop</a>
             <?php if (isset($_SESSION['userId'])): ?>
-                <a href="/profile" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition">Profil</a>
-                <a href="/logout" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition">Logout</a>
+                <a href="/profile" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition" data-nav-link>Profil</a>
+                <a href="/logout" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition" data-nav-link>Logout</a>
             <?php else: ?>
-                <a href="/login" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition">Login</a>
-                <a href="/register" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition">Registrieren</a>
+                <a href="/login" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition" data-nav-link>Login</a>
+                <a href="/register" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition" data-nav-link>Registrieren</a>
             <?php endif; ?>
             <a href="/cart" class="border-2 border-ink text-ink px-4 py-2 hover:border-primary hover:text-primary transition font-mono text-xs uppercase tracking-widest">
                 Warenkorb <span id="cart-count" class="ml-1">0</span>
@@ -22,7 +22,13 @@
         </div>
 
         <!-- Mobile menu toggle -->
-        <button id="menu-toggle" class="md:hidden text-2xl">☰</button>
+        <button id="menu-toggle" class="md:hidden text-ink" aria-label="Menü öffnen">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square">
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+        </button>
     </nav>
 
     <!-- Mobile menu -->

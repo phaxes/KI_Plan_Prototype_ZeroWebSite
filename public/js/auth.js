@@ -152,12 +152,14 @@ const AuthModule = {
                 body: JSON.stringify(payload)
             })
             .then((response) => {
-                if (response.ok) {
-                    console.log('Session verified on server');
-                } else {
-                    console.error('Session verification failed:', response.status);
-                    return response.json().then(data => console.error('Server error:', data));
-                }
+                return response.json().then(data => {
+                    if (response.ok) {
+                        console.log('Session verified on server:', data);
+                    } else {
+                        console.error('Session verification failed:', response.status);
+                        console.error('Server response:', JSON.stringify(data, null, 2));
+                    }
+                });
             })
             .catch((error) => {
                 console.error('Session sync error:', error);

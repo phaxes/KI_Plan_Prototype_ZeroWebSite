@@ -39,12 +39,25 @@ class AuthController
         header('Content-Type: application/json');
 
         try {
-            // Extract token from Authorization header
-            $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-            error_log('Auth header: ' . substr($authHeader, 0, 50) . '...');
+            // Try multiple header formats (reverse proxies might transform them)
+            $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ??
+                          $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ??
+                          $_SERVER['X_AUTHORIZATION'] ?? '';
+
+            error_log('Looking for auth header...');
+            error_log('HTTP_AUTHORIZATION: ' . ($_SERVER['HTTP_AUTHORIZATION'] ?? 'not set'));
+            error_log('REDIRECT_HTTP_AUTHORIZATION: ' . ($_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? 'not set'));
+            error_log('X_AUTHORIZATION: ' . ($_SERVER['X_AUTHORIZATION'] ?? 'not set'));
+
+            if (!$authHeader) {
+                error_log('No Authorization header found. All headers: ' . json_encode(getallheaders() ?: $_SERVER));
+                http_response_code(400);
+                echo json_encode(['error' => 'Missing or invalid Authorization header']);
+                return;
+            }
 
             if (!preg_match('/Bearer\s+(.+)$/', $authHeader, $matches)) {
-                error_log('Invalid auth header format');
+                error_log('Invalid auth header format: ' . substr($authHeader, 0, 50));
                 http_response_code(400);
                 echo json_encode(['error' => 'Missing or invalid Authorization header']);
                 return;

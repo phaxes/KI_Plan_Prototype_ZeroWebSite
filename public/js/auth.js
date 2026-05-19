@@ -122,15 +122,15 @@ const AuthModule = {
     },
 
     syncSessionWithServer: function(user) {
-        // Get ID token and send to server for session verification
+        // Get fresh ID token and send to server for session verification
         user.getIdToken(true).then((token) => {
             fetch('/auth/verify', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    idToken: token,
                     email: user.email,
                     displayName: user.displayName || '',
                     uid: user.uid
@@ -140,7 +140,7 @@ const AuthModule = {
                 if (response.ok) {
                     console.log('Session verified on server');
                 } else {
-                    console.error('Session verification failed');
+                    console.error('Session verification failed:', response.status);
                 }
             })
             .catch((error) => {

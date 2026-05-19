@@ -39,15 +39,25 @@ class AuthController
         header('Content-Type: application/json');
 
         try {
-            $input = json_decode(file_get_contents('php://input'), true);
-            $idToken = $input['idToken'] ?? null;
+            // Extract token from Authorization header
+            $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+            if (!preg_match('/Bearer\s+(.+)$/', $authHeader, $matches)) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Missing or invalid Authorization header']);
+                return;
+            }
+
+            $idToken = $matches[1];
+
+            // Get user data from request body
+            $input = json_decode(file_get_contents('php://input'), true) ?? [];
             $email = $input['email'] ?? null;
             $displayName = $input['displayName'] ?? '';
             $uid = $input['uid'] ?? null;
 
-            if (!$idToken || !$email || !$uid) {
+            if (!$email || !$uid) {
                 http_response_code(400);
-                echo json_encode(['error' => 'Missing required fields']);
+                echo json_encode(['error' => 'Missing required fields: email, uid']);
                 return;
             }
 

@@ -123,20 +123,31 @@ class Auth
      */
     public static function setupSession($uid, $email, $displayName)
     {
-        // Verify user exists or create
-        self::createOrUpdateUser($uid, $email, $displayName);
+        try {
+            // Verify user exists or create
+            self::createOrUpdateUser($uid, $email, $displayName);
 
-        // Get admin status
-        $isAdmin = self::isUserAdmin($uid);
+            // Get admin status
+            $isAdmin = self::isUserAdmin($uid);
 
-        // Set session variables
-        $_SESSION['userId'] = $uid;
-        $_SESSION['email'] = $email;
-        $_SESSION['displayName'] = $displayName;
-        $_SESSION['isAdmin'] = $isAdmin;
-        $_SESSION['loginTime'] = time();
+            // Set session variables
+            $_SESSION['userId'] = $uid;
+            $_SESSION['email'] = $email;
+            $_SESSION['displayName'] = $displayName;
+            $_SESSION['isAdmin'] = $isAdmin;
+            $_SESSION['loginTime'] = time();
 
-        return true;
+            return true;
+        } catch (\Throwable $e) {
+            error_log('Session setup error: ' . $e->getMessage());
+            // Continue even if Firestore fails - just no admin status
+            $_SESSION['userId'] = $uid;
+            $_SESSION['email'] = $email;
+            $_SESSION['displayName'] = $displayName;
+            $_SESSION['isAdmin'] = false;
+            $_SESSION['loginTime'] = time();
+            return true;
+        }
     }
 
     /**

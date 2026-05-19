@@ -1,0 +1,46 @@
+query ListUserCategories @auth(level: USER, insecureReason: "This operation is safe to expose to all logged in users as it filters by the authenticated user's ID.") {
+  categories(where: {userId: {eq_expr: "auth.uid"}}) {
+    id
+    name
+    description
+    createdAt
+  }
+}
+
+mutation CreateExpense($categoryId: UUID!, $amount: Float!, $transactionDate: Date!, $description: String) @auth(level: USER, insecureReason: "This operation is safe to expose to all logged in users as it associates the expense with their ID.") {
+  expense_insert(data: {
+    userId_expr: "auth.uid",
+    categoryId: $categoryId,
+    amount: $amount,
+    transactionDate: $transactionDate,
+    createdAt_expr: "request.time",
+    description: $description
+  }) {
+    id
+  }
+}
+
+query GetBudgetDetails($budgetId: UUID!) @auth(level: USER, insecureReason: "This operation is safe to expose to all logged in users as it retrieves a specific budget owned by them.") {
+  budget(key: {id: $budgetId}, where: {userId: {eq_expr: "auth.uid"}}) {
+    id
+    amount
+    startDate
+    endDate
+    description
+    category {
+      id
+      name
+    }
+  }
+}
+
+mutation UpdateUserFirstName($newFirstName: String!) @auth(level: USER, insecureReason: "This operation is safe to expose to all logged in users as they can only update their own first name.") {
+  user_update(
+    key: {id_expr: "auth.uid"},
+    data: {
+      firstName: $newFirstName
+    }
+  ) {
+    id
+  }
+}

@@ -1,0 +1,89 @@
+mutation CreateSeedData @transaction @auth(level: PUBLIC, insecureReason: "This operation is for seeding data and will not be exposed to the public in a production environment.") {
+  user_insertMany(data: [
+    {
+      id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+      username: "john_doe",
+      email: "john.doe@example.com",
+      createdAt: "2023-01-01T10:00:00Z",
+      firstName: "John",
+      lastName: "Doe"
+    },
+    {
+      id: "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22",
+      username: "jane_smith",
+      email: "jane.smith@example.com",
+      createdAt: "2023-01-01T10:05:00Z",
+      firstName: "Jane",
+      lastName: "Smith"
+    }
+  ]) {
+    id
+  }
+  category_insertMany(data: [
+    {
+      id: "c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33",
+      userId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+      name: "Food",
+      description: "Groceries and dining out",
+      createdAt: "2023-01-01T10:10:00Z"
+    },
+    {
+      id: "d0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44",
+      userId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+      name: "Transport",
+      description: "Public transport and fuel",
+      createdAt: "2023-01-01T10:15:00Z"
+    },
+    {
+      id: "e0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55",
+      userId: "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22",
+      name: "Utilities",
+      description: "Electricity, water, internet",
+      createdAt: "2023-01-01T10:20:00Z"
+    }
+  ]) {
+    id
+  }
+  budget_insertMany(data: [
+    {
+      userId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+      categoryId: "c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33",
+      amount: 500.00,
+      startDate: "2023-11-01",
+      endDate: "2023-11-30",
+      createdAt: "2023-11-01T08:00:00Z",
+      description: "November food budget"
+    },
+    {
+      userId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+      categoryId: "d0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44",
+      amount: 150.00,
+      startDate: "2023-11-01",
+      endDate: "2023-11-30",
+      createdAt: "2023-11-01T08:05:00Z",
+      description: "November transport budget"
+    }
+  ]) {
+    id
+  }
+  expense_insertMany(data: [
+    {
+      userId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+      categoryId: "c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33",
+      amount: 55.75,
+      transactionDate: "2023-11-05",
+      createdAt: "2023-11-05T12:00:00Z",
+      description: "Groceries at local supermarket"
+    },
+    {
+      userId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+      categoryId: "d0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44",
+      amount: 15.00,
+      transactionDate: "2023-11-03",
+      createdAt: "2023-11-03T09:30:00Z",
+      description: "Bus fare"
+    }
+  ]) {
+    id
+  }
+}

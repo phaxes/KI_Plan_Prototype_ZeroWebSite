@@ -7,8 +7,8 @@
 ## Prerequisites
 
 Before you can log in, you will need:
-- A **Google account** (Gmail or any Google Workspace account)
-- **Admin access** granted by the site owner (set in Firebase)
+- A **registered account** on the website (email + password)
+- **Admin access** granted by the site owner (set in Firebase `users` collection)
 - Access to the website URL (e.g., `http://localhost:8000` or your production domain)
 
 ---
@@ -21,35 +21,47 @@ Go to the website homepage and look for the **Login** button in the top-right co
 
 **Direct URL**: `http://localhost:8000/login` (or your production URL)
 
-### Step 2: Click "Login" Button
+### Step 2: Enter Your Email & Password
 
-You'll see the login page with the Google sign-in option.
+You'll see the login page with an email/password form.
 
-Click the **"Sign in with Google"** button.
+Fill in:
+- **E-Mail**: Your registered email address
+- **Passwort** (Password): Your account password
 
-### Step 3: Enter Your Google Credentials
+### Step 3: Submit the Form
 
-A Google login popup will appear:
-1. Enter your **Google email address**
-2. Click **Next**
-3. Enter your **Google password**
-4. Click **Next**
+Click the **Anmelden** (Sign in) button.
 
-If you have 2-factor authentication enabled, you may be asked to verify your identity.
+### Step 4: Wait for Server Verification
 
-### Step 4: Authorize the Application
+The system will:
+1. Send your credentials to Firebase for authentication
+2. Verify the Firebase token on the server
+3. Create a PHP session for you
+4. Redirect you to your profile page
 
-Google will ask for permission to access your account information. Click **Allow** to proceed.
-
-After successful authentication, you'll be redirected back to the website.
+If login fails, check:
+- Email address is correct
+- Password is correct (case-sensitive)
+- Your account is registered (if not, click "Hier registrieren" to create one)
 
 ---
 
 ## Getting Admin Access
 
-Once you've logged in with Google, you need to be granted **admin status** by the site owner.
+Once you've logged in, you need to be granted **admin status** by the site owner.
+
+### For Users: Requesting Admin Access
+
+1. **Create your account** by registering at `/register`
+2. **Log in** with your credentials
+3. **Contact the site owner** and provide your **email address**
+4. The site owner will grant you admin status in Firebase
 
 ### For Site Owners: Setting Up Admins
+
+Follow these steps to make a user an admin:
 
 1. **Access Firebase Console**
    - Go to [console.firebase.google.com](https://console.firebase.google.com)
@@ -57,21 +69,33 @@ Once you've logged in with Google, you need to be granted **admin status** by th
 
 2. **Navigate to Firestore Database**
    - In the left sidebar, click **Firestore Database**
+   - Look for the **`users`** collection
 
-3. **Open the Users Collection**
-   - Find the **`users`** collection
-   - Click on the document matching the admin's **Google UID**
-   - The UID can be found in your Firebase Auth console under the user's profile
+3. **Find the User Document**
+   - In the `users` collection, find the document with the user's **UID**
+   - The UID is the document ID and can be found in your Firebase Auth console
+   - Or search by the user's email in the `users` collection documents
 
 4. **Add Admin Status**
-   - Click **Edit** on the document
-   - Click **Add field** at the bottom
-   - Field name: **`isAdmin`**
-   - Type: **Boolean**
-   - Value: **`true`**
+   - Click on the user's document to open it
+   - Click **Add field** button
+   - **Field name**: `isAdmin`
+   - **Type**: Boolean
+   - **Value**: `true`
    - Click **Save**
 
-The user is now an admin and can access the admin dashboard.
+5. **Verify Admin Access**
+   - Have the user log out and log back in
+   - They should now be able to access `/admin`
+
+**Note**: If the user's document doesn't exist, you can create it manually with:
+```
+UID: (their Firebase UID)
+isAdmin: true
+email: (their email)
+displayName: (their name)
+createdAt: (current date)
+```
 
 ---
 
@@ -99,76 +123,99 @@ Once you have admin status, you can access the admin dashboard:
 
 ## Common Issues & Solutions
 
-### "You don't have permission to access this page"
+### "Access Denied" when accessing `/admin`
 
 **Cause**: You are logged in but not set as an admin in Firestore.
 
 **Solution**:
-1. Confirm with your site owner that your Google account has been added as admin
-2. Check your Google UID in Firebase Auth console
-3. Have the site owner manually set `isAdmin: true` in your Firestore user document
-4. Refresh the page or log out and log back in
+1. Confirm with your site owner that your account has been marked as admin
+2. Make sure your UID in Firebase matches the document in Firestore `users` collection
+3. Have the site owner check that `isAdmin: true` is set in your user document
+4. Log out and log back in to refresh your session
+5. If still denied, contact your site administrator
 
 ---
 
-### "Google login popup didn't open"
+### "Email/Password combination is incorrect"
 
-**Cause**: Browser popup blocker is active, or you're using an unsupported browser.
+**Cause**: Wrong email or password entered.
 
 **Solution**:
-1. Check your browser popup settings and allow popups for this website
-2. Try a different browser (Chrome, Firefox, Safari, or Edge)
-3. Ensure you have JavaScript enabled
-4. Clear your browser cache and try again
+1. Check that you're using the correct email (case-insensitive, but whitespace matters)
+2. Verify your password is correct (passwords are case-sensitive)
+3. Use browser's password manager if available
+4. If you forgot your password:
+   - Contact your site administrator for password reset
+   - Or manually delete your user from Firebase and re-register
 
 ---
 
-### "I'm logged in but see a blank dashboard"
+### "Account doesn't exist"
 
-**Cause**: Firebase credentials not properly configured on the server.
+**Cause**: You haven't registered yet, or registered with a different email.
+
+**Solution**:
+1. Click **"Hier registrieren"** (Register here) on the login page
+2. Fill in your name, email, and password
+3. Confirm your password
+4. Click **Register**
+5. You can now log in with your email and password
+
+---
+
+### "Dashboard is blank or shows errors"
+
+**Cause**: Firebase credentials not properly configured on the server, or permission issues in Firestore.
 
 **Solution**:
 1. Check browser Developer Tools Console (F12 or Cmd+Opt+J)
-2. Look for Firebase error messages
-3. Verify `.env` file has correct Firebase credentials
+2. Look for Firebase error messages (red errors)
+3. If you see permission denied errors:
+   - Check Firestore security rules allow your user to read data
+   - Verify your `users` document has `isAdmin: true`
 4. Contact your site administrator if errors persist
 
 ---
 
-### "Can't see the Login button"
+### "I can log in but can't create/edit content"
 
-**Cause**: You may already be logged in, or the page hasn't fully loaded.
+**Cause**: Firestore security rules don't allow your user role to write data.
 
 **Solution**:
-1. Look in the top-right corner — if you see your Google profile picture, you're already logged in
-2. If no picture appears, refresh the page
-3. Try clearing your browser cache
-4. Ensure JavaScript is enabled
+1. Verify your account has `isAdmin: true` in Firestore `users` collection
+2. Check browser console for permission errors
+3. If rules are too restrictive, contact your site administrator to adjust them
+4. Log out and log back in to refresh permissions
 
 ---
 
 ## Logging Out
 
 To log out:
-1. Click your profile picture in the top-right corner (if visible)
-2. Select **Logout** or **Sign out**
+1. Navigate to the **Logout** page at `/logout`
+2. Or click the logout button in your profile menu (if available)
 3. You'll be redirected to the home page
+4. Your session will be cleared on both the client and server
 
 ---
 
 ## Security Tips
 
 ✅ **Do:**
-- Use a strong, unique password for your Google account
-- Enable 2-factor authentication on your Google account
+- Use a **strong, unique password** (mix of upper/lowercase, numbers, symbols)
+- Make your password at least 8 characters long
 - Log out when finished, especially on shared computers
-- Never share your login credentials
+- Clear your browser cache after logging out on public machines
+- Keep your email address secure
+- Contact admin immediately if you suspect unauthorized access
 
 ❌ **Don't:**
+- Use the same password across multiple websites
+- Write down your password or store it in plain text
+- Share your credentials with anyone
 - Leave your browser logged in on public computers
-- Share your Google account with others
-- Write down your password
-- Use the same password across multiple sites
+- Click login links from suspicious emails
+- Disable browser security/HTTPS warnings
 
 ---
 
@@ -184,20 +231,78 @@ If you encounter issues logging in:
 
 ## Technical Details (For Administrators)
 
-**Authentication Flow**:
-- User logs in via Google OAuth 2.0
-- Firebase verifies credentials
-- Server-side session is created
-- Admin status checked in Firestore `users` collection
-- Access to `/admin` granted if `isAdmin === true`
+### Authentication Flow
 
-**Related Files**:
-- Authentication: `src/Controllers/AuthController.php`
-- Admin panel: `templates/admin/` directory
-- Firestore rules: `firestore.rules`
+1. **User Registration**
+   - User fills email/password form on `/register`
+   - `AuthModule.handleRegister()` calls `auth.createUserWithEmailAndPassword()`
+   - Firebase creates user account
+   - User document created in Firestore with `isAdmin: false`
 
-**Environment Requirements**:
-- Firebase project with Authentication enabled
-- Google OAuth configured in Firebase Console
-- Firestore database with `users` collection
-- Valid FIREBASE_* credentials in `.env`
+2. **User Login**
+   - User fills email/password form on `/login`
+   - `AuthModule.handleLogin()` calls `auth.signInWithEmailAndPassword()`
+   - Firebase authenticates and returns JWT token
+
+3. **Session Verification**
+   - Client-side JavaScript calls `user.getIdToken(true)` to get JWT
+   - JWT is sent to `/auth/verify` POST endpoint
+   - Server verifies JWT with Firebase SDK
+   - PHP session created with user info (`uid`, `email`, `displayName`)
+
+4. **Admin Check**
+   - When accessing `/admin`, `AuthMiddleware::requireAdmin()` is called
+   - Checks if user is logged in (session exists)
+   - Checks if user is admin by querying Firestore `users/{uid}` document
+   - Grants access only if `isAdmin === true`
+
+### Key Files
+
+**Backend**:
+- `src/Controllers/AuthController.php` — Login/Register form handlers, Token verification
+- `src/Middleware/AuthMiddleware.php` — Permission checks for routes
+- `src/Auth.php` — Session management, Firebase token verification
+- `src/Controllers/Admin/DashboardController.php` — Admin dashboard (requires admin)
+
+**Frontend**:
+- `public/js/auth.js` — Firebase authentication, form handling
+- `public/js/firebase-init.js` — Firebase SDK initialization
+- `templates/auth/login.phtml` — Login form
+- `templates/auth/register.phtml` — Registration form
+- `templates/admin/` — Admin dashboard templates
+
+**Firebase**:
+- `firestore.rules` — Security rules for read/write permissions
+- Firebase Authentication enabled (Email/Password provider)
+- Firestore database with `users` and `posts` collections
+
+### Environment Requirements
+
+```env
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_API_KEY=your-web-api-key
+FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+FIREBASE_APP_ID=your-app-id
+FIREBASE_SERVICE_ACCOUNT_JSON=/path/to/serviceAccount.json
+```
+
+### Firestore Security Rules
+
+The `firestore.rules` file controls who can read/write data:
+
+```
+collection users/{uid} {
+  allow read: if request.auth.uid == uid || userIsAdmin();
+  allow write: if request.auth.uid == uid && !isModifyingIsAdminField();
+  allow create: if request.auth.uid == uid;
+}
+
+function userIsAdmin() {
+  return request.auth != null && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+}
+```
+
+Only the site owner can set `isAdmin: true` via Firebase Console.

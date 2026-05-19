@@ -22,7 +22,12 @@ const AuthModule = {
         auth.onAuthStateChanged((user) => {
             if (user) {
                 console.log('User authenticated:', user.email);
-                this.syncSessionWithServer(user);
+                // Only sync if we have all required data
+                if (user.email && user.uid) {
+                    this.syncSessionWithServer(user);
+                } else {
+                    console.log('User object incomplete, waiting for full load');
+                }
             } else {
                 console.log('User not authenticated');
             }
@@ -122,30 +127,43 @@ const AuthModule = {
     },
 
     syncSessionWithServer: function(user) {
+        // Validate user object has required data
+        if (!user || !user.email || !user.uid) {
+            console.error('Cannot sync session: incomplete user object', user);
+            return;
+        }
+
         // Get fresh ID token and send to server for session verification
         user.getIdToken(true).then((token) => {
+            const payload = {
+                email: user.email,
+                displayName: user.displayName || '',
+                uid: user.uid
+            };
+
+            console.log('Syncing session with payload:', { email: payload.email, uid: payload.uid });
+
             fetch('/auth/verify', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({
-                    email: user.email,
-                    displayName: user.displayName || '',
-                    uid: user.uid
-                })
+                body: JSON.stringify(payload)
             })
             .then((response) => {
                 if (response.ok) {
                     console.log('Session verified on server');
                 } else {
                     console.error('Session verification failed:', response.status);
+                    return response.json().then(data => console.error('Server error:', data));
                 }
             })
             .catch((error) => {
                 console.error('Session sync error:', error);
             });
+        }).catch((error) => {
+            console.error('Failed to get ID token:', error);
         });
     }
 };

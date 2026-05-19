@@ -21,11 +21,16 @@ class Firebase
                 return null;
             }
 
-            // Handle both file path (localhost) and direct JSON (Render)
+            // Handle both file path (localhost) and base64-encoded JSON (Render)
             if (!file_exists($serviceAccountJson)) {
-                // If not a file path, assume it's direct JSON content
-                // Validate JSON first
-                $decoded = json_decode($serviceAccountJson, true);
+                // Try to decode if it's base64-encoded
+                $decoded = base64_decode($serviceAccountJson, true);
+                if ($decoded !== false) {
+                    $serviceAccountJson = $decoded;
+                }
+
+                // Now validate JSON
+                $parsed = json_decode($serviceAccountJson, true);
                 if (json_last_error() !== JSON_ERROR_NONE) {
                     error_log('Firebase: Invalid JSON in FIREBASE_SERVICE_ACCOUNT_JSON: ' . json_last_error_msg());
                     return null;

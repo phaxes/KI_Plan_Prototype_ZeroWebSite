@@ -18,11 +18,16 @@ class Auth
                 throw new \Exception('Firebase service account not configured');
             }
 
-            // Handle both file path (localhost) and direct JSON (Render)
+            // Handle both file path (localhost) and base64-encoded JSON (Render)
             if (!file_exists($serviceAccountJson)) {
-                // If not a file path, assume it's direct JSON content
-                // Validate it's actually JSON
-                $decoded = json_decode($serviceAccountJson, true);
+                // Try to decode if it's base64-encoded
+                $decoded = base64_decode($serviceAccountJson, true);
+                if ($decoded !== false) {
+                    $serviceAccountJson = $decoded;
+                }
+
+                // Now validate JSON
+                $parsed = json_decode($serviceAccountJson, true);
                 if (json_last_error() !== JSON_ERROR_NONE) {
                     throw new \Exception('FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON: ' . json_last_error_msg());
                 }
@@ -30,7 +35,7 @@ class Auth
                 // Ensure we have the required fields
                 $required = ['type', 'project_id', 'private_key', 'client_email'];
                 foreach ($required as $field) {
-                    if (!isset($decoded[$field]) || empty($decoded[$field])) {
+                    if (!isset($parsed[$field]) || empty($parsed[$field])) {
                         throw new \Exception("FIREBASE_SERVICE_ACCOUNT_JSON missing required field: $field");
                     }
                 }

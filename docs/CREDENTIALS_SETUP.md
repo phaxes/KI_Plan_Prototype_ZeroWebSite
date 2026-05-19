@@ -37,25 +37,79 @@ Firebase provides authentication, real-time database (Firestore), and cloud stor
 
 This allows your backend (PHP) to access Firebase securely.
 
+**⚠️ Important**: Firebase will show you **Node.js code** when you generate a key. **Ignore that code** — this project uses **PHP**, not Node.js. Just download the JSON file.
+
+**Steps:**
+
 1. In Firebase console, click **gear icon** → **"Project Settings"**
 2. Click **"Service Accounts"** tab
-3. Click **"Generate New Private Key"**
-4. Download JSON file (save safely)
-5. File contains: `private_key`, `project_id`, `client_email`
+3. Click **"Generate New Private Key"** button
+4. A JSON file will download automatically
+5. **Ignore the Node.js initialization code** shown on the screen
+6. The JSON file itself is what you need (it's language-agnostic)
 
-### Step 3: Get API Keys
+**File Contents:**
+The JSON contains credentials used by PHP to authenticate:
+- `type`: "service_account"
+- `project_id`: Your Firebase project ID
+- `private_key`: Secret key for authentication
+- `client_email`: Service account email
+- `client_id`: Service account ID
+- Other fields (auth_uri, token_uri, etc.)
 
-For frontend Firebase JavaScript SDK:
+### Step 2b: Place Service Account Key File
+
+After downloading the JSON file:
+
+1. **Rename it** to `serviceAccountKey.json` (optional, but recommended)
+2. **Place it in your project root** or a secure location
+   - Example: `/path/to/project/serviceAccountKey.json`
+   - Or: `/var/www/secure/serviceAccountKey.json` (production)
+3. **Note the full path** — you'll use it in `.env`
+
+**⚠️ Security**: Never commit `serviceAccountKey.json` to Git. Add to `.gitignore`:
+```
+serviceAccountKey.json
+*.private.json
+.env
+```
+
+**How PHP Uses It:**
+
+The PHP backend (`kreait/firebase-php` SDK) reads this JSON file:
+
+```php
+// In src/Firebase.php
+$factory = (new Factory)
+    ->withServiceAccount(__DIR__ . '/../serviceAccountKey.json');
+
+$firebase = $factory->createDatabase();
+$firestore = $factory->createFirestore();
+```
+
+The JSON is never shown in code — it's loaded securely from disk.
+
+---
+
+### Step 3: Get Frontend API Keys
+
+For the frontend JavaScript SDK (client-side authentication):
 
 1. In Firebase console, click **gear icon** → **"Project Settings"**
 2. Click **"General"** tab
 3. Scroll to **"Your apps"** section
-4. Click web icon **</>**
-5. Copy configuration object containing:
-   - `apiKey`
-   - `projectId`
-   - `authDomain`
-   - `storageBucket`
+4. Click the web icon **</>** (if no apps exist, register a web app first)
+5. Copy the entire configuration object:
+   ```javascript
+   {
+     apiKey: "AIzaSy...",
+     authDomain: "your-project.firebaseapp.com",
+     projectId: "your-project-id",
+     storageBucket: "your-project.appspot.com",
+     messagingSenderId: "...",
+     appId: "1:...:web:..."
+   }
+   ```
 
 ### Step 4: Enable Authentication
 
@@ -74,15 +128,55 @@ For frontend Firebase JavaScript SDK:
 
 **Note**: Test mode allows reads/writes for testing. Deploy security rules before production.
 
-### Step 6: Update .env (Local)
+### Step 4b: Update .env (Local Development)
+
+After placing your service account key, update `.env`:
+
+**Copy `.env.example` to `.env` first:**
+```bash
+cp .env.example .env
+```
+
+**Then fill in your credentials:**
 
 ```bash
-FIREBASE_PROJECT_ID=your-project-id
-FIREBASE_SERVICE_ACCOUNT_JSON=/path/to/downloaded/serviceAccountKey.json
-FIREBASE_API_KEY=AIzaSy...from_project_settings
-FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+# Backend: Service Account for PHP (full path to JSON file)
+FIREBASE_PROJECT_ID=zerocostws
+FIREBASE_SERVICE_ACCOUNT_JSON=/path/to/serviceAccountKey.json
+
+# Frontend: API keys from Project Settings > General > Your apps
+FIREBASE_API_KEY=AIzaSyDummyKeyTest123456789
+FIREBASE_AUTH_DOMAIN=zerocostws.firebaseapp.com
+FIREBASE_STORAGE_BUCKET=zerocostws.appspot.com
+FIREBASE_MESSAGING_SENDER_ID=1234567890
+FIREBASE_APP_ID=1:1234567890:web:abcdef1234567890
 ```
+
+**Finding Each Value:**
+
+| Variable | Source | Example |
+|----------|--------|---------|
+| `FIREBASE_PROJECT_ID` | Firebase Console → Project Settings → General | `zerocostws` |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | Full path to downloaded JSON file | `/home/user/projects/serviceAccountKey.json` |
+| `FIREBASE_API_KEY` | Firebase Console → Project Settings → General → Your apps | `AIzaSyDummyKeyTest123456789` |
+| `FIREBASE_AUTH_DOMAIN` | Firebase Console → Project Settings → General → Your apps | `zerocostws.firebaseapp.com` |
+| `FIREBASE_STORAGE_BUCKET` | Firebase Console → Project Settings → General → Your apps | `zerocostws.appspot.com` |
+| `FIREBASE_MESSAGING_SENDER_ID` | Firebase Console → Project Settings → General → Your apps | `1234567890` |
+| `FIREBASE_APP_ID` | Firebase Console → Project Settings → General → Your apps | `1:1234567890:web:abcdef` |
+
+**⚠️ Local Development**:
+```bash
+# Put actual path to your downloaded serviceAccountKey.json
+# Example: /Users/myname/Downloads/serviceAccountKey.json
+FIREBASE_SERVICE_ACCOUNT_JSON=/full/path/to/serviceAccountKey.json
+```
+
+**⚠️ Production Deployment** (Render.com):
+Use environment variables in Render dashboard, not file paths:
+```bash
+FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"zerocostws",...}
+```
+(Paste entire JSON content as a single environment variable)
 
 ### Step 7: Deploy Security Rules
 

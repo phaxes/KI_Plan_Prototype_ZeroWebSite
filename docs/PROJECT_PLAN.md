@@ -64,7 +64,7 @@ Der Zeitrahmen ist auf 2 Wochen (10 Arbeitstage) festgesetzt.
 
   Claude Code CLI: 
 
-  "generiere mir eine website mit: HTML PHP Javascript CSS Tailwind und einer firebase no sql datenbank anbindung, integriere mailchimp und stripe. Die Website muss ein admin backend haben. Das 
+  "Generiere mir eine website mit: HTML PHP Javascript CSS Tailwind und einer firebase no sql datenbank anbindung, integriere mailchimp und stripe. Die Website muss ein admin backend haben. Das 
   CMS soll eine vom Nutzer im Backend zu pflegende Newsseite haben und Blogartikel pflegen können. Eine kleine Shopfunktion muss auch integriert werden (Produkte ansehen / in Warenkorb legen 
   die Bezahlfunktion soll mit Stripe gelöst sein jedoch ohne echte Zahlungsabwicklung (soll später erweiterbar sein). Nutzer sollen sich registrieren und anmelden können. Kunden sollen per 
   E-Mail Newsletter informiert werden und Marketing innerhalb soll diese binden ( neue Produkte / News / Blogeinträge / Cross Selling). Die Website soll gehostet werden können auf No Cost 

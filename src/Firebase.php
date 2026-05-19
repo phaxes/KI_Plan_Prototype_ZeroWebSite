@@ -16,9 +16,18 @@ class Firebase
         if (self::$instance === null) {
             $serviceAccountJson = Config::get('FIREBASE_SERVICE_ACCOUNT_JSON');
 
-            if (!$serviceAccountJson || !file_exists($serviceAccountJson) || $serviceAccountJson === '/dev/null') {
+            if (!$serviceAccountJson || $serviceAccountJson === '/dev/null') {
                 error_log('Firebase: Service account not configured');
                 return null;
+            }
+
+            // Handle both file path (localhost) and direct JSON (Render)
+            if (!file_exists($serviceAccountJson)) {
+                // If not a file path, assume it's direct JSON content
+                // Create temporary file for kreait library
+                $tempFile = sys_get_temp_dir() . '/firebase_sa_' . uniqid() . '.json';
+                file_put_contents($tempFile, $serviceAccountJson);
+                $serviceAccountJson = $tempFile;
             }
 
             try {

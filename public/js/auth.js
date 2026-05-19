@@ -20,6 +20,11 @@ const AuthModule = {
         if (logoutBtn) {
             logoutBtn.addEventListener('click', (e) => this.handleLogout(e));
         }
+
+        const logoutBtnMobile = document.getElementById('logout-btn-mobile');
+        if (logoutBtnMobile) {
+            logoutBtnMobile.addEventListener('click', (e) => this.handleLogout(e));
+        }
     },
 
     checkAuthState: function() {

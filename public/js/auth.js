@@ -136,6 +136,7 @@ const AuthModule = {
         // Get fresh ID token and send to server for session verification
         user.getIdToken(true).then((token) => {
             const payload = {
+                idToken: token,
                 email: user.email,
                 displayName: user.displayName || '',
                 uid: user.uid
@@ -146,8 +147,7 @@ const AuthModule = {
             fetch('/auth/verify', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(payload)
             })

@@ -39,47 +39,18 @@ class AuthController
         header('Content-Type: application/json');
 
         try {
-            // Try multiple header formats (reverse proxies might transform them)
-            $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ??
-                          $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ??
-                          $_SERVER['X_AUTHORIZATION'] ?? '';
-
-            error_log('Looking for auth header...');
-            error_log('HTTP_AUTHORIZATION: ' . ($_SERVER['HTTP_AUTHORIZATION'] ?? 'not set'));
-            error_log('REDIRECT_HTTP_AUTHORIZATION: ' . ($_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? 'not set'));
-            error_log('X_AUTHORIZATION: ' . ($_SERVER['X_AUTHORIZATION'] ?? 'not set'));
-
-            if (!$authHeader) {
-                error_log('No Authorization header found. All headers: ' . json_encode(getallheaders() ?: $_SERVER));
-                http_response_code(400);
-                echo json_encode(['error' => 'Missing or invalid Authorization header']);
-                return;
-            }
-
-            if (!preg_match('/Bearer\s+(.+)$/', $authHeader, $matches)) {
-                error_log('Invalid auth header format: ' . substr($authHeader, 0, 50));
-                http_response_code(400);
-                echo json_encode(['error' => 'Missing or invalid Authorization header']);
-                return;
-            }
-
-            $idToken = $matches[1];
-            error_log('Token extracted, length: ' . strlen($idToken));
-
-            // Get user data from request body
+            // Get data from request body (Authorization header may be stripped on Render)
             $rawInput = file_get_contents('php://input');
-            error_log('Raw input: ' . $rawInput);
-
             $input = json_decode($rawInput, true) ?? [];
+
+            $idToken = $input['idToken'] ?? null;
             $email = $input['email'] ?? null;
             $displayName = $input['displayName'] ?? '';
             $uid = $input['uid'] ?? null;
 
-            error_log('Parsed - email: ' . ($email ? 'set' : 'null') . ', uid: ' . ($uid ? 'set' : 'null'));
-
-            if (!$email || !$uid) {
+            if (!$idToken || !$email || !$uid) {
                 http_response_code(400);
-                echo json_encode(['error' => 'Missing required fields: email, uid', 'received' => ['email' => $email, 'uid' => $uid]]);
+                echo json_encode(['error' => 'Missing required fields: idToken, email, uid']);
                 return;
             }
 

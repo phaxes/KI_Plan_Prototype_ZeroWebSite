@@ -33,6 +33,12 @@ Professional documentation for all 5 milestones of the Zero-Cost Website project
    - What needs credentials
    - Quality assessment
 
+5. **[ADMIN_LOGIN_GUIDE.md](ADMIN_LOGIN_GUIDE.md)** (5 min)
+   - Step-by-step admin login procedure
+   - Setting up admin access in Firestore
+   - Troubleshooting common login issues
+   - Security best practices
+
 ---
 
 ## 📚 Milestone Documentation

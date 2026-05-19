@@ -23,13 +23,7 @@ class Firebase
 
             try {
                 $factory = new Factory();
-                if (!method_exists($factory, 'withServiceAccount')) {
-                    error_log('Firebase SDK not available');
-                    return null;
-                }
-
-                $firebase = $factory->withServiceAccount($serviceAccountJson);
-                self::$instance = $firebase->create();
+                self::$instance = $factory->withServiceAccount($serviceAccountJson);
             } catch (\Exception $e) {
                 error_log('Firebase init: ' . $e->getMessage());
                 return null;

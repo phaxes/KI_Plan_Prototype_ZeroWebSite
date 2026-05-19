@@ -8,7 +8,7 @@
             <a href="/shop" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition" data-nav-link>Shop</a>
             <?php if (isset($_SESSION['userId'])): ?>
                 <a href="/profile" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition" data-nav-link>Profil</a>
-                <button id="logout-btn" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition cursor-pointer bg-none border-none p-0">Logout</button>
+                <button id="logout-btn" class="border-2 border-ink text-ink px-4 py-2 hover:border-primary hover:text-primary transition font-mono text-xs uppercase tracking-widest cursor-pointer">Logout</button>
             <?php else: ?>
                 <a href="/login" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition" data-nav-link>Login</a>
                 <a href="/register" class="font-mono text-xs uppercase tracking-widest text-ink hover:text-primary transition" data-nav-link>Registrieren</a>
@@ -39,12 +39,12 @@
             <a href="/shop" class="font-mono text-xs uppercase tracking-widest text-paper hover:text-primary transition py-2">Shop</a>
             <?php if (isset($_SESSION['userId'])): ?>
                 <a href="/profile" class="font-mono text-xs uppercase tracking-widest text-paper hover:text-primary transition py-2">Profil</a>
-                <button id="logout-btn-mobile" class="font-mono text-xs uppercase tracking-widest text-paper hover:text-primary transition py-2 cursor-pointer bg-none border-none p-0 text-left">Logout</button>
+                <button id="logout-btn-mobile" class="border-2 border-paper text-paper px-4 py-2 hover:border-primary hover:text-primary transition font-mono text-xs uppercase tracking-widest cursor-pointer">Logout</button>
             <?php else: ?>
                 <a href="/login" class="font-mono text-xs uppercase tracking-widest text-paper hover:text-primary transition py-2">Login</a>
                 <a href="/register" class="font-mono text-xs uppercase tracking-widest text-paper hover:text-primary transition py-2">Registrieren</a>
             <?php endif; ?>
-            <a href="/cart" class="border-2 border-paper text-paper px-4 py-2 hover:border-primary hover:text-primary transition font-mono text-xs uppercase tracking-widest py-2">Warenkorb <span id="cart-count-mobile" class="ml-1">0</span></a>
+            <a href="/cart" class="border-2 border-paper text-paper px-4 py-2 hover:border-primary hover:text-primary transition font-mono text-xs uppercase tracking-widest">Warenkorb <span id="cart-count-mobile" class="ml-1">0</span></a>
             <?php if (isset($_SESSION['isAdmin']) && $_SESSION['isAdmin']): ?>
                 <a href="/admin" class="border-2 border-primary text-primary px-4 py-2 hover:bg-primary hover:text-void transition font-mono text-xs uppercase tracking-widest py-2">Admin</a>
             <?php endif; ?>

@@ -1,0 +1,21 @@
+How to Diagnose the Issue
+
+  1. Open browser dev tools (F12) and go to Console
+  2. Try logging in via the login form
+  3. Check the console output for:    - Token length
+    - Token parts count (should be 3)    - Token preview
+  4. Check server logs (/tmp/php.log) for:
+    - What error message the kreait library is returning
+    - Token payload claims    - Timestamp comparison
+  Next Steps to Fix
+
+  The improved error logging will help identify the exact issue. Run your server with:
+  pkill -f "php -S" || true
+  php -S localhost:8000 > /tmp/php.log 2>&1 &
+  Then:
+  1. Try logging in
+  2. Check browser console for token details  3. Check /tmp/php.log for server-side errors
+  4. Share the error messages and we can pinpoint the exact cause
+  The most common issues are:
+  - Clock skew: Server time different from Firebase (check with date)  - Token expiration: Token expiring before reaching server
+  - Firebase SDK version mismatch: Client and server SDK versions incompatible

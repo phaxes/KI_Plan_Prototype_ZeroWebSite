@@ -34,6 +34,47 @@ class AuthController
         ]);
     }
 
+    public function debugToken($params = [], $post = [], $get = [])
+    {
+        header('Content-Type: application/json');
+
+        try {
+            $rawInput = file_get_contents('php://input');
+            $input = json_decode($rawInput, true) ?? [];
+
+            $idToken = $input['idToken'] ?? null;
+
+            if (!$idToken) {
+                echo json_encode(['error' => 'No token provided']);
+                return;
+            }
+
+            $parts = explode('.', $idToken);
+            $result = [
+                'tokenLength' => strlen($idToken),
+                'numParts' => count($parts),
+                'partLengths' => array_map('strlen', $parts)
+            ];
+
+            if (count($parts) === 3) {
+                try {
+                    $header = json_decode(base64_decode(strtr($parts[0], '-_', '+/')), true);
+                    $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
+                    $result['header'] = $header;
+                    $result['payload'] = $payload;
+                    $result['timestamp'] = time();
+                } catch (\Exception $e) {
+                    $result['decodeError'] = $e->getMessage();
+                }
+            }
+
+            echo json_encode($result, JSON_PRETTY_PRINT);
+
+        } catch (\Exception $e) {
+            echo json_encode(['error' => $e->getMessage()]);
+        }
+    }
+
     public function verify($params = [], $post = [], $get = [])
     {
         header('Content-Type: application/json');
@@ -48,6 +89,13 @@ class AuthController
             $displayName = $input['displayName'] ?? '';
             $uid = $input['uid'] ?? null;
 
+            error_log("Auth verify - uid: $uid, email: $email, token length: " . strlen($idToken ?? ''));
+            error_log("Token format check: parts = " . count(explode('.', $idToken ?? '')));
+
+            if ($idToken && strlen($idToken) < 500) {
+                error_log("Token preview: " . substr($idToken, 0, 100));
+            }
+
             if (!$idToken || !$email || !$uid) {
                 http_response_code(400);
                 echo json_encode(['error' => 'Missing required fields: idToken, email, uid']);
@@ -58,6 +106,7 @@ class AuthController
             $tokenData = Auth::verifyToken($idToken);
 
             if (!$tokenData) {
+                error_log("Auth verify: token verification returned null");
                 http_response_code(401);
                 echo json_encode(['error' => 'Invalid token']);
                 return;
@@ -71,8 +120,9 @@ class AuthController
 
         } catch (\Exception $e) {
             error_log('Token verification error: ' . $e->getMessage());
+            error_log('Token verification stack trace: ' . $e->getTraceAsString());
             http_response_code(500);
-            echo json_encode(['error' => 'Verification failed']);
+            echo json_encode(['error' => 'Verification failed: ' . $e->getMessage()]);
         }
     }
 

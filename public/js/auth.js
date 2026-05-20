@@ -135,6 +135,12 @@ const AuthModule = {
 
         // Get fresh ID token and send to server for session verification
         user.getIdToken(true).then((token) => {
+            console.log('Got ID token, length:', token.length);
+            console.log('Token parts:', (token.match(/\./g) || []).length + 1);
+
+            // Log token preview (first and last 50 chars)
+            console.log('Token preview:', token.substring(0, 50) + '...' + token.substring(token.length - 50));
+
             const payload = {
                 idToken: token,
                 email: user.email,
@@ -142,7 +148,11 @@ const AuthModule = {
                 uid: user.uid
             };
 
-            console.log('Syncing session with payload:', { email: payload.email, uid: payload.uid });
+            console.log('Syncing session with payload:', {
+                email: payload.email,
+                uid: payload.uid,
+                tokenLength: token.length
+            });
 
             fetch('/auth/verify', {
                 method: 'POST',

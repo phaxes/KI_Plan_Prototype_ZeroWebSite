@@ -39,6 +39,7 @@ $router->get('/checkout/success', 'CheckoutController@success');
 $router->get('/login', 'AuthController@login');
 $router->get('/register', 'AuthController@register');
 $router->post('/auth/verify', 'AuthController@verify');
+$router->post('/auth/debug-token', 'AuthController@debugToken');
 $router->get('/logout', 'AuthController@logout');
 $router->get('/profile', 'ProfileController@index');
 

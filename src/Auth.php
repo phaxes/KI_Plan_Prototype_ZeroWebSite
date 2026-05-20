@@ -50,9 +50,11 @@ class Auth
             }
 
             try {
+                error_log('Initializing Firebase Admin SDK with service account');
                 $factory = new Factory();
                 $firebase = $factory->withServiceAccount($serviceAccountJson);
                 self::$auth = $firebase->createAuth();
+                error_log('Firebase Admin SDK initialized successfully');
             } catch (\Exception $e) {
                 error_log('Firebase Auth Error: ' . $e->getMessage());
                 throw $e;
@@ -97,8 +99,50 @@ class Auth
     public static function verifyToken($idToken)
     {
         try {
+            if (!$idToken) {
+                error_log('Token verification failed: empty token');
+                return null;
+            }
+
+            // Validate token format (JWT should have 3 parts separated by dots)
+            $tokenParts = explode('.', $idToken);
+            if (count($tokenParts) !== 3) {
+                error_log('Token verification failed: invalid JWT format (expected 3 parts, got ' . count($tokenParts) . ')');
+                return null;
+            }
+
+            // Decode header and payload to inspect (without verification first)
+            try {
+                $header = json_decode(base64_decode(strtr($tokenParts[0], '-_', '+/')), true);
+                $payload = json_decode(base64_decode(strtr($tokenParts[1], '-_', '+/')), true);
+                error_log('Token header: ' . json_encode($header));
+                error_log('Token payload claims - iss: ' . ($payload['iss'] ?? 'missing') .
+                         ', aud: ' . ($payload['aud'] ?? 'missing') .
+                         ', exp: ' . ($payload['exp'] ?? 'missing') .
+                         ', iat: ' . ($payload['iat'] ?? 'missing') .
+                         ', current_time: ' . time());
+
+                // Check if token is expired
+                if (isset($payload['exp']) && $payload['exp'] < time()) {
+                    error_log('Token has expired: exp=' . $payload['exp'] . ', current=' . time());
+                }
+                if (isset($payload['iat']) && $payload['iat'] > time() + 60) {
+                    error_log('Token issued in future: iat=' . $payload['iat'] . ', current=' . time());
+                }
+            } catch (\Exception $e) {
+                error_log('Error decoding token payload: ' . $e->getMessage());
+            }
+
             $auth = self::getAuthService();
+            if (!$auth) {
+                error_log('Token verification failed: Firebase Auth service not initialized');
+                return null;
+            }
+
+            error_log('Attempting to verify token with Firebase Admin SDK');
             $verifiedToken = $auth->verifyIdToken($idToken);
+            error_log('Token verified successfully');
+
             $uid = $verifiedToken->claims()->get('sub');
 
             return [
@@ -108,7 +152,9 @@ class Auth
                 'displayName' => $verifiedToken->claims()->get('name') ?? ''
             ];
         } catch (\Throwable $e) {
-            error_log('Token verification failed: ' . $e->getMessage());
+            error_log('Token verification failed with exception: ' . get_class($e));
+            error_log('Exception message: ' . $e->getMessage());
+            error_log('Token verification stack trace: ' . $e->getTraceAsString());
             return null;
         }
     }

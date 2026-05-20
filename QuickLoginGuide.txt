@@ -1,0 +1,13 @@
+ Verification PBI 2: 
+
+     1. php -S localhost:8000 — visit / — no PHP errors in console
+     2. Visit /news and /blog — renders empty state or articles
+     3. Login as admin → visit /admin/news/create — create a news post → redirected to /admin/news list
+     4. Click Edit → update the post → list updates
+     5. Click Delete → confirm → row disappears (POST to delete route, redirects back)
+     6. Do the same for /admin/blog
+     7. Visit / — $latestNews and $latestBlog sections now show published posts
+     8. Check browser console — no ReferenceError for deleteNews/deleteBlog
+     9. Check browser console — no Firebase YOUR_API_KEY warning if .env is configured
+
+

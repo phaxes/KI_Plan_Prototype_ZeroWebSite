@@ -15,22 +15,34 @@ class Auth
             $serviceAccountJson = Config::get('FIREBASE_SERVICE_ACCOUNT_JSON');
 
             if (!$serviceAccountJson) {
+                error_log('FIREBASE_SERVICE_ACCOUNT_JSON not configured');
+                error_log('Config keys: ' . implode(', ', array_keys(Config::all())));
                 throw new \Exception('Firebase service account not configured');
             }
 
+            error_log('Service account source: ' . (strlen($serviceAccountJson) > 100 ? 'JSON string' : 'file path'));
+
             // Handle both file path (localhost) and base64-encoded JSON (Render)
             if (!file_exists($serviceAccountJson)) {
-                // Try to decode if it's base64-encoded
+                error_log('Service account path does not exist (expected for Render): ' . $serviceAccountJson);
+
+                // Try to decode if it's base64-encoded (for Render.com)
                 $decoded = base64_decode($serviceAccountJson, true);
-                if ($decoded !== false) {
+                if ($decoded !== false && strlen($decoded) > 100) {
+                    error_log('Successfully decoded base64-encoded service account');
                     $serviceAccountJson = $decoded;
+                } else {
+                    error_log('Could not decode as base64, will try as raw JSON');
                 }
 
                 // Now validate JSON
                 $parsed = json_decode($serviceAccountJson, true);
                 if (json_last_error() !== JSON_ERROR_NONE) {
+                    error_log('JSON decode error: ' . json_last_error_msg());
                     throw new \Exception('FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON: ' . json_last_error_msg());
                 }
+
+                error_log('Service account JSON is valid, project_id: ' . ($parsed['project_id'] ?? 'missing'));
 
                 // Ensure we have the required fields
                 $required = ['type', 'project_id', 'private_key', 'client_email'];
@@ -43,10 +55,13 @@ class Auth
                 // Try to create temporary file for kreait library
                 $tempFile = self::createTempServiceAccountFile($serviceAccountJson);
                 if ($tempFile) {
+                    error_log('Created temporary service account file: ' . $tempFile);
                     $serviceAccountJson = $tempFile;
                 } else {
                     throw new \Exception('Could not create temporary service account file and direct JSON not supported by kreait');
                 }
+            } else {
+                error_log('Using local service account file: ' . $serviceAccountJson);
             }
 
             try {
@@ -57,6 +72,7 @@ class Auth
                 error_log('Firebase Admin SDK initialized successfully');
             } catch (\Exception $e) {
                 error_log('Firebase Auth Error: ' . $e->getMessage());
+                error_log('Service account source was: ' . (strlen($serviceAccountJson) > 200 ? 'file path' : 'JSON'));
                 throw $e;
             }
         }

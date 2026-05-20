@@ -94,6 +94,46 @@ class Auth
     }
 
     /**
+     * Analyze token type and issuer
+     */
+    private static function analyzeToken($idToken)
+    {
+        try {
+            $parts = explode('.', $idToken);
+            if (count($parts) !== 3) {
+                return ['type' => 'invalid', 'reason' => 'Not a JWT (wrong part count)'];
+            }
+
+            $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
+            $iss = $payload['iss'] ?? '';
+            $aud = $payload['aud'] ?? '';
+
+            // Identify token type by issuer
+            if (strpos($iss, 'firebase-adminsdk') !== false) {
+                return [
+                    'type' => 'custom',
+                    'reason' => 'Admin SDK custom token (issuer contains firebase-adminsdk)',
+                    'issuer' => $iss
+                ];
+            } elseif (strpos($iss, 'https://securetoken.google.com/') === 0) {
+                return [
+                    'type' => 'id_token',
+                    'reason' => 'Valid Firebase ID token',
+                    'issuer' => $iss
+                ];
+            } else {
+                return [
+                    'type' => 'unknown',
+                    'reason' => 'Unknown token type',
+                    'issuer' => $iss
+                ];
+            }
+        } catch (\Exception $e) {
+            return ['type' => 'unparseable', 'reason' => 'Could not parse token'];
+        }
+    }
+
+    /**
      * Verify Firebase ID token and get user info
      */
     public static function verifyToken($idToken)
@@ -110,6 +150,10 @@ class Auth
                 error_log('Token verification failed: invalid JWT format (expected 3 parts, got ' . count($tokenParts) . ')');
                 return null;
             }
+
+            // Analyze token type
+            $tokenAnalysis = self::analyzeToken($idToken);
+            error_log('Token analysis: type=' . $tokenAnalysis['type'] . ', reason=' . $tokenAnalysis['reason']);
 
             // Decode header and payload to inspect (without verification first)
             try {
@@ -154,6 +198,14 @@ class Auth
         } catch (\Throwable $e) {
             error_log('Token verification failed with exception: ' . get_class($e));
             error_log('Exception message: ' . $e->getMessage());
+
+            // Provide specific error message based on token type
+            $tokenAnalysis = self::analyzeToken($idToken);
+            if ($tokenAnalysis['type'] === 'custom') {
+                error_log('ERROR: Received Admin SDK custom token instead of Firebase ID token');
+                error_log('FIX: Client must use user.getIdToken() to get ID token, not Admin SDK createCustomToken()');
+            }
+
             error_log('Token verification stack trace: ' . $e->getTraceAsString());
             return null;
         }

@@ -108,7 +108,27 @@ class AuthController
             if (!$tokenData) {
                 error_log("Auth verify: token verification returned null");
                 http_response_code(401);
-                echo json_encode(['error' => 'Invalid token']);
+
+                // Try to provide more specific error message
+                $parts = explode('.', $idToken);
+                $errorMsg = 'Invalid token';
+
+                if (count($parts) === 3) {
+                    try {
+                        $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
+                        $iss = $payload['iss'] ?? '';
+
+                        if (strpos($iss, 'firebase-adminsdk') !== false) {
+                            $errorMsg = 'Wrong token type: Admin SDK token received. Client must use user.getIdToken() for ID tokens.';
+                        } elseif (isset($payload['exp']) && $payload['exp'] < time()) {
+                            $errorMsg = 'Token expired';
+                        }
+                    } catch (\Exception $e) {
+                        // Ignore decode errors, use generic message
+                    }
+                }
+
+                echo json_encode(['error' => $errorMsg]);
                 return;
             }
 

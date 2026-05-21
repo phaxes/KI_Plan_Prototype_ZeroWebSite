@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat)",
+      "Bash(chmod +x /tmp/session_isolation_test.sh)",
+      "Bash(/tmp/session_isolation_test.sh)"
+    ]
+  }
+}

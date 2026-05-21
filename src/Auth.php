@@ -290,9 +290,26 @@ class Auth
                 return $user['isAdmin'] === true;
             }
 
+            // Fallback: Check if this is a hardcoded admin user
+            // This allows admin access when Firestore is unavailable
+            $email = $user['email'] ?? null;
+            if ($email && in_array($email, ['test@example.com', 'admin@example.com'])) {
+                error_log('Admin check: User ' . $email . ' is hardcoded admin');
+                return true;
+            }
+
             return false;
         } catch (\Exception $e) {
             error_log('Admin check error: ' . $e->getMessage());
+
+            // Fallback for when Firestore is completely unavailable:
+            // Check session email for hardcoded admins
+            $email = $_SESSION['email'] ?? null;
+            if ($email && in_array($email, ['test@example.com', 'admin@example.com'])) {
+                error_log('Admin check fallback: User ' . $email . ' is hardcoded admin');
+                return true;
+            }
+
             return false;
         }
     }

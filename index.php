@@ -7,7 +7,34 @@ use App\Router;
 
 Config::load();
 
+// Configure session before starting
+session_name('PHPSESSID');
+
+// Set session cookie parameters BEFORE session_start()
+$isSecure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
+session_set_cookie_params([
+    'lifetime' => 0,           // Session cookie (deleted when browser closes)
+    'path' => '/',
+    'domain' => '',
+    'secure' => $isSecure,     // HTTPS only on production
+    'httponly' => true,        // No JavaScript access
+    'samesite' => 'Lax'        // CSRF protection
+]);
+
+// Use custom save path if on Render (ephemeral filesystem)
+if (getenv('RENDER')) {
+    session_save_path('/tmp/php-sessions');
+    @mkdir('/tmp/php-sessions', 0700, true);
+}
+
 session_start();
+
+// Prevent session fixation on every page load
+// Only regenerate if not already done in this request
+if (!isset($_SESSION['_session_regenerated'])) {
+    session_regenerate_id(false);
+    $_SESSION['_session_regenerated'] = true;
+}
 
 $router = new Router();
 

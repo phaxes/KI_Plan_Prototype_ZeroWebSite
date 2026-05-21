@@ -39,6 +39,15 @@ class AuthMiddleware
      */
     public static function requireGuest()
     {
+        // If coming from logout, ensure session is truly empty
+        if (isset($_GET['from']) && $_GET['from'] === 'logout') {
+            // Force start fresh session
+            session_write_close();
+            session_unset();
+            session_destroy();
+            session_start();
+        }
+
         if (Auth::isLoggedIn()) {
             header('Location: /profile');
             exit;

@@ -363,19 +363,50 @@ class Auth
      */
     public static function logout()
     {
+        $sessionId = session_id();
+        error_log('Logout initiated - session_id: ' . $sessionId);
+
         // Unset all session variables
         $_SESSION = array();
+        error_log('Session variables cleared');
+
+        // Delete session file explicitly for Render.com compatibility
+        $sessionSavePath = session_save_path();
+        if ($sessionSavePath && strpos($sessionSavePath, ';') === false) {
+            // session_save_path might be like /tmp or /tmp/php-sessions
+            $sessionFile = $sessionSavePath . '/sess_' . $sessionId;
+            if (file_exists($sessionFile)) {
+                @unlink($sessionFile);
+                error_log('Session file deleted: ' . $sessionFile);
+            }
+        }
 
         // Destroy the session
-        session_destroy();
+        @session_destroy();
+        error_log('Session destroyed');
 
-        // Delete the session cookie
+        // Delete the session cookie with proper attributes
         if (ini_get("session.use_cookies")) {
             $params = session_get_cookie_params();
-            setcookie(session_name(), '', time() - 42000,
-                $params["path"], $params["domain"],
-                $params["secure"], $params["httponly"]
-            );
+            $sessionName = session_name();
+
+            error_log('Deleting session cookie: ' . $sessionName);
+
+            // Set cookie to expire in the past with all original attributes
+            $isSecure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
+            setcookie($sessionName, '', [
+                'expires' => time() - 3600,
+                'path' => $params['path'] ?? '/',
+                'domain' => $params['domain'] ?? '',
+                'secure' => $isSecure,
+                'httponly' => true,
+                'samesite' => 'Lax'
+            ]);
+
+            // Also try the old cookie format for broader compatibility
+            setcookie($sessionName, '', time() - 3600, '/', '', $isSecure, true);
+
+            error_log('Session cookie deletion headers set');
         }
 
         return true;

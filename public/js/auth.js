@@ -16,12 +16,27 @@ const AuthModule = {
             registerForm.addEventListener('submit', (e) => this.handleRegister(e));
         }
 
+        // Handle logout links - intercept them to call Firebase signOut
+        document.querySelectorAll('a[href="/logout"]').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.handleLogout(e);
+            });
+        });
     },
 
     checkAuthState: function() {
+        // Check if we're in the logout process
+        const isLoggingOut = sessionStorage.getItem('logging_out');
+
         auth.onAuthStateChanged((user) => {
             if (user) {
                 console.log('User authenticated:', user.email);
+                // Don't auto-sync during logout process
+                if (isLoggingOut) {
+                    console.log('Logout in progress, skipping auto-sync');
+                    return;
+                }
                 // Only sync if we have all required data
                 if (user.email && user.uid) {
                     this.syncSessionWithServer(user);
@@ -30,6 +45,7 @@ const AuthModule = {
                 }
             } else {
                 console.log('User not authenticated');
+                sessionStorage.removeItem('logging_out');
             }
         });
     },
@@ -118,10 +134,29 @@ const AuthModule = {
 
     handleLogout: function(e) {
         e.preventDefault();
+        console.log('Logout initiated - signing out from Firebase');
+
+        // Set flag to prevent auto-login during logout process
+        sessionStorage.setItem('logging_out', 'true');
+
         auth.signOut().then(() => {
+            console.log('Firebase signOut successful');
             App.showNotification('Erfolgreich abgemeldet', 'success');
+
+            // Clear any stored authentication data
+            localStorage.removeItem('firebase_auth');
+            sessionStorage.removeItem('firebase_auth');
+
+            // Small delay to ensure Firebase state is updated
             setTimeout(() => {
-                window.location.href = '/';
+                console.log('Redirecting to /logout for PHP session cleanup');
+                window.location.href = '/logout';
+            }, 500);
+        }).catch((error) => {
+            console.error('Firebase signOut error:', error);
+            // Even if Firebase signOut fails, proceed to PHP logout
+            setTimeout(() => {
+                window.location.href = '/logout';
             }, 500);
         });
     },

@@ -149,7 +149,13 @@ class AuthController
     public function logout($params = [], $post = [], $get = [])
     {
         Auth::logout();
-        header('Location: /');
+
+        // Clear any authentication-related local storage on client side
+        // by redirecting to login page
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        header('Location: /login');
         exit;
     }
 }

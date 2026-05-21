@@ -8,7 +8,8 @@
       "Bash(php -l src/Controllers/ProfileController.php)",
       "Bash(php -l src/Controllers/AuthController.php)",
       "Bash(php -l index.php)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ]
   }
 }

@@ -12,7 +12,9 @@
       "Bash(git commit *)",
       "Bash(npm list *)",
       "Bash(npx playwright *)",
-      "Bash(php *)"
+      "Bash(php *)",
+      "Bash(chmod +x test-render.sh)",
+      "Bash(./test-render.sh)"
     ]
   }
 }

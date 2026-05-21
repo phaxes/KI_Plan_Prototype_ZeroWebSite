@@ -280,8 +280,10 @@ class Auth
 
     /**
      * Check if user is admin
+     * @param $uid string User UID
+     * @param $email string User email (optional, used for fallback)
      */
-    public static function isUserAdmin($uid)
+    public static function isUserAdmin($uid, $email = null)
     {
         try {
             $user = self::getUserFromFirestore($uid);
@@ -292,9 +294,9 @@ class Auth
 
             // Fallback: Check if this is a hardcoded admin user
             // This allows admin access when Firestore is unavailable
-            $email = $user['email'] ?? null;
-            if ($email && in_array($email, ['test@example.com', 'admin@example.com'])) {
-                error_log('Admin check: User ' . $email . ' is hardcoded admin');
+            $checkEmail = $user['email'] ?? $email ?? null;
+            if ($checkEmail && in_array($checkEmail, ['test@example.com', 'admin@example.com'])) {
+                error_log('Admin check: User ' . $checkEmail . ' is hardcoded admin');
                 return true;
             }
 
@@ -303,10 +305,10 @@ class Auth
             error_log('Admin check error: ' . $e->getMessage());
 
             // Fallback for when Firestore is completely unavailable:
-            // Check session email for hardcoded admins
-            $email = $_SESSION['email'] ?? null;
-            if ($email && in_array($email, ['test@example.com', 'admin@example.com'])) {
-                error_log('Admin check fallback: User ' . $email . ' is hardcoded admin');
+            // Use the provided email parameter or fall back to session
+            $checkEmail = $email ?? $_SESSION['email'] ?? null;
+            if ($checkEmail && in_array($checkEmail, ['test@example.com', 'admin@example.com'])) {
+                error_log('Admin check fallback: User ' . $checkEmail . ' is hardcoded admin');
                 return true;
             }
 
@@ -327,7 +329,7 @@ class Auth
             self::createOrUpdateUser($uid, $email, $displayName);
 
             // Get admin status
-            $isAdmin = self::isUserAdmin($uid);
+            $isAdmin = self::isUserAdmin($uid, $email);
 
             // Set session variables
             $_SESSION['userId'] = $uid;

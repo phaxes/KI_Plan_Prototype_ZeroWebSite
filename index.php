@@ -68,7 +68,14 @@ $router->get('/register', 'AuthController@register');
 $router->post('/auth/verify', 'AuthController@verify');
 $router->post('/auth/debug-token', 'AuthController@debugToken');
 $router->get('/logout', 'AuthController@logout');
+
+// Profile
 $router->get('/profile', 'ProfileController@index');
+$router->post('/api/profile/update', 'ProfileController@updateProfile');
+$router->get('/profile/change-password', 'ProfileController@changePasswordForm');
+$router->post('/auth/change-password', 'AuthController@changePassword');
+$router->get('/profile/newsletter', 'ProfileController@newsletterForm');
+$router->post('/api/profile/newsletter-preference', 'ProfileController@updateNewsletterPreference');
 
 // Newsletter
 $router->post('/api/newsletter/subscribe', 'NewsletterController@subscribe');

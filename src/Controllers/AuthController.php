@@ -158,4 +158,59 @@ class AuthController
         header('Location: /login');
         exit;
     }
+
+    public function changePassword($params = [], $post = [], $get = [])
+    {
+        header('Content-Type: application/json');
+
+        // Require authentication
+        if (!Auth::isLoggedIn()) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Not authenticated']);
+            return;
+        }
+
+        try {
+            $rawInput = file_get_contents('php://input');
+            $input = json_decode($rawInput, true) ?? [];
+
+            $currentPassword = $input['currentPassword'] ?? '';
+            $newPassword = $input['newPassword'] ?? '';
+            $confirmPassword = $input['confirmPassword'] ?? '';
+
+            // Validation
+            if (empty($currentPassword) || empty($newPassword) || empty($confirmPassword)) {
+                http_response_code(400);
+                echo json_encode(['error' => 'All fields are required']);
+                return;
+            }
+
+            if ($newPassword !== $confirmPassword) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Passwords do not match']);
+                return;
+            }
+
+            if (strlen($newPassword) < 6) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Password must be at least 6 characters']);
+                return;
+            }
+
+            // The actual password change happens client-side via Firebase SDK
+            // This endpoint can be used for validation or logging in the future
+            // Return success - client will handle Firebase password update
+
+            http_response_code(200);
+            echo json_encode([
+                'success' => true,
+                'message' => 'Password change request validated. Please complete the change in your browser.'
+            ]);
+
+        } catch (\Exception $e) {
+            error_log('Password change error: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to process password change']);
+        }
+    }
 }

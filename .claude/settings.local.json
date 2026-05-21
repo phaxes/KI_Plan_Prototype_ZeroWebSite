@@ -3,7 +3,12 @@
     "allow": [
       "Bash(cat)",
       "Bash(chmod +x /tmp/session_isolation_test.sh)",
-      "Bash(/tmp/session_isolation_test.sh)"
+      "Bash(/tmp/session_isolation_test.sh)",
+      "Bash(node *)",
+      "Bash(php -l src/Controllers/ProfileController.php)",
+      "Bash(php -l src/Controllers/AuthController.php)",
+      "Bash(php -l index.php)",
+      "Bash(git add *)"
     ]
   }
 }

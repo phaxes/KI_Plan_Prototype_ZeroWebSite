@@ -1,0 +1,100 @@
+<section class="py-12">
+    <div class="container mx-auto px-4 max-w-md">
+        <h1 class="text-4xl font-bold mb-8"><?= htmlspecialchars($pageTitle) ?></h1>
+
+        <div class="bg-white rounded shadow p-8">
+            <form id="newsletter-form">
+                <div class="mb-6">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" id="subscribed" class="w-5 h-5" <?= ($subscribed ?? false) ? 'checked' : '' ?>>
+                        <span class="ml-3 text-gray-700 font-semibold">Newsletter abonnieren</span>
+                    </label>
+                    <p class="text-sm text-gray-600 mt-2">Erhalte Updates zu neuen News, Blog-Posts und Produkten</p>
+                </div>
+
+                <div id="categoriesSection" class="mb-6 p-4 bg-gray-50 rounded <?= ($subscribed ?? false) ? '' : 'hidden' ?>">
+                    <label class="block text-gray-700 font-semibold mb-3">Kategorien</label>
+                    <div class="space-y-3">
+                        <label class="flex items-center">
+                            <input type="checkbox" name="category" value="news" class="w-4 h-4" <?= (in_array('news', $categories ?? [])) ? 'checked' : '' ?>>
+                            <span class="ml-2 text-gray-700">News</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="category" value="blog" class="w-4 h-4" <?= (in_array('blog', $categories ?? [])) ? 'checked' : '' ?>>
+                            <span class="ml-2 text-gray-700">Blog</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="category" value="products" class="w-4 h-4" <?= (in_array('products', $categories ?? [])) ? 'checked' : '' ?>>
+                            <span class="ml-2 text-gray-700">Produkte</span>
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-primary text-white px-6 py-3 rounded hover:bg-blue-600 transition font-semibold">
+                    Einstellungen speichern
+                </button>
+            </form>
+
+            <div class="border-t mt-6 pt-6">
+                <a href="/profile" class="text-primary hover:text-blue-600 transition font-semibold">← Zurück zum Profil</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+// Toggle categories section when newsletter checkbox changes
+document.getElementById('subscribed').addEventListener('change', function() {
+    const categoriesSection = document.getElementById('categoriesSection');
+    if (this.checked) {
+        categoriesSection.classList.remove('hidden');
+    } else {
+        categoriesSection.classList.add('hidden');
+    }
+});
+
+// Handle form submission
+document.getElementById('newsletter-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const subscribed = document.getElementById('subscribed').checked;
+    const categoryCheckboxes = document.querySelectorAll('input[name="category"]:checked');
+    const categories = Array.from(categoryCheckboxes).map(cb => cb.value);
+
+    // At least one category should be selected if subscribed
+    if (subscribed && categories.length === 0) {
+        App.showNotification('Bitte mindestens eine Kategorie auswählen', 'error');
+        return;
+    }
+
+    fetch('/api/profile/newsletter-preference', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            subscribed: subscribed,
+            categories: categories
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const message = subscribed
+                ? 'Newsletter-Einstellungen aktualisiert!'
+                : 'Du hast dich vom Newsletter abgemeldet';
+            App.showNotification(message, 'success');
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            App.showNotification('Fehler: ' + (data.error || 'Unbekannter Fehler'), 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        App.showNotification('Fehler beim Speichern', 'error');
+    });
+});
+</script>

@@ -3,35 +3,96 @@
         <h1 class="text-4xl font-bold mb-8"><?= htmlspecialchars($pageTitle) ?></h1>
 
         <div class="bg-white rounded shadow p-8">
+            <!-- Persönliche Daten -->
             <div class="mb-8">
                 <h2 class="text-2xl font-bold mb-4">Persönliche Daten</h2>
                 <div class="space-y-4">
                     <div>
                         <label class="block text-gray-700 font-semibold mb-2">Name</label>
-                        <input type="text" value="<?= htmlspecialchars($displayName) ?>" class="w-full px-4 py-2 border rounded" disabled>
+                        <input type="text" id="displayNameInput" value="<?= htmlspecialchars($displayName) ?>" class="w-full px-4 py-2 border rounded" disabled>
                     </div>
                     <div>
                         <label class="block text-gray-700 font-semibold mb-2">E-Mail</label>
                         <input type="email" value="<?= htmlspecialchars($email) ?>" class="w-full px-4 py-2 border rounded" disabled>
                     </div>
                 </div>
-            </div>
-
-            <div class="border-t pt-8">
-                <h2 class="text-2xl font-bold mb-4">Account-Einstellungen</h2>
-                <div class="space-y-2">
-                    <button class="w-full text-left px-4 py-3 border rounded hover:bg-gray-50 transition">
-                        Passwort ändern (M3)
-                    </button>
-                    <button class="w-full text-left px-4 py-3 border rounded hover:bg-gray-50 transition">
-                        Newsletter-Einstellungen (M5)
-                    </button>
+                <button type="button" onclick="ProfileModule.toggleEditMode()" class="mt-4 bg-primary text-white px-6 py-2 rounded hover:bg-blue-600 transition">
+                    Namen bearbeiten
+                </button>
+                <div id="editNameForm" class="hidden mt-4 p-4 bg-gray-50 rounded">
+                    <label class="block text-gray-700 font-semibold mb-2">Neuer Name</label>
+                    <input type="text" id="newNameInput" class="w-full px-4 py-2 border rounded mb-3" placeholder="Neuer Name" value="<?= htmlspecialchars($displayName) ?>">
+                    <div class="flex gap-2">
+                        <button type="button" onclick="ProfileModule.saveName()" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition">Speichern</button>
+                        <button type="button" onclick="ProfileModule.toggleEditMode()" class="bg-gray-400 text-white px-6 py-2 rounded hover:bg-gray-500 transition">Abbrechen</button>
+                    </div>
                 </div>
             </div>
 
+            <!-- Account-Einstellungen -->
+            <div class="border-t pt-8 mb-8">
+                <h2 class="text-2xl font-bold mb-4">Account-Einstellungen</h2>
+                <div class="space-y-3">
+                    <a href="/profile/change-password" class="block w-full text-left px-4 py-3 border rounded hover:bg-gray-50 transition font-semibold text-primary">
+                        → Passwort ändern
+                    </a>
+                    <a href="/profile/newsletter" class="block w-full text-left px-4 py-3 border rounded hover:bg-gray-50 transition font-semibold text-primary">
+                        → Newsletter-Einstellungen
+                    </a>
+                </div>
+            </div>
+
+            <!-- Logout -->
             <div class="border-t pt-8">
-                <a href="/logout" class="text-red-600 hover:text-red-700 transition font-semibold">Logout</a>
+                <a href="/logout" class="text-red-600 hover:text-red-700 transition font-semibold">Abmelden</a>
             </div>
         </div>
     </div>
 </section>
+
+<script>
+const ProfileModule = {
+    toggleEditMode: function() {
+        const form = document.getElementById('editNameForm');
+        form.classList.toggle('hidden');
+    },
+
+    saveName: function() {
+        const newName = document.getElementById('newNameInput').value.trim();
+
+        if (!newName) {
+            App.showNotification('Name darf nicht leer sein', 'error');
+            return;
+        }
+
+        if (newName.length < 2) {
+            App.showNotification('Name muss mindestens 2 Zeichen lang sein', 'error');
+            return;
+        }
+
+        fetch('/api/profile/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                displayName: newName
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                App.showNotification('Profil erfolgreich aktualisiert!', 'success');
+                document.getElementById('displayNameInput').value = newName;
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                App.showNotification('Fehler: ' + (data.error || 'Unbekannter Fehler'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            App.showNotification('Fehler beim Speichern', 'error');
+        });
+    }
+};
+</script>

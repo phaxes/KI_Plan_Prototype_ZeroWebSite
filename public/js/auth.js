@@ -76,13 +76,19 @@ const AuthModule = {
 
     handleRegister: function(e) {
         e.preventDefault();
-        const name = document.getElementById('name').value;
-        const email = document.getElementById('email').value;
+        const name = document.getElementById('name').value.trim();
+        const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
         const passwordConfirm = document.getElementById('password-confirm').value;
 
+        // Validation
         if (!name || !email || !password || !passwordConfirm) {
             App.showNotification('Bitte alle Felder ausfüllen', 'error');
+            return;
+        }
+
+        if (name.length < 2) {
+            App.showNotification('Name muss mindestens 2 Zeichen lang sein', 'error');
             return;
         }
 
@@ -96,6 +102,16 @@ const AuthModule = {
             return;
         }
 
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            App.showNotification('Ungültige E-Mail-Adresse', 'error');
+            return;
+        }
+
+        // Show loading state
+        this.setRegisterButtonLoading(true);
+
         auth.createUserWithEmailAndPassword(email, password)
             .then((userCredential) => {
                 const user = userCredential.user;
@@ -104,32 +120,73 @@ const AuthModule = {
                 return user.updateProfile({
                     displayName: name
                 }).then(() => {
+                    console.log('User profile updated');
                     // Create user document in Firestore
                     return db.collection('users').doc(user.uid).set({
                         displayName: name,
                         email: email,
                         isAdmin: false,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                         address: {}
                     });
                 }).then(() => {
-                    App.showNotification('Registrierung erfolgreich!', 'success');
+                    console.log('User document created in Firestore');
+                    App.showNotification('Registrierung erfolgreich! Leite weiter zum Profil...', 'success');
                     this.syncSessionWithServer(user);
                     setTimeout(() => {
                         window.location.href = '/profile';
-                    }, 1000);
+                    }, 1500);
                 });
             })
             .catch((error) => {
                 console.error('Register error:', error);
                 let message = error.message;
-                if (error.code === 'auth/email-already-in-use') {
-                    message = 'E-Mail-Adresse wird bereits verwendet';
-                } else if (error.code === 'auth/invalid-email') {
-                    message = 'Ungültige E-Mail-Adresse';
+
+                // Better error messages
+                switch (error.code) {
+                    case 'auth/email-already-in-use':
+                        message = 'Diese E-Mail-Adresse ist bereits registriert';
+                        break;
+                    case 'auth/invalid-email':
+                        message = 'Ungültige E-Mail-Adresse';
+                        break;
+                    case 'auth/weak-password':
+                        message = 'Passwort ist zu schwach. Nutze Zahlen, Großbuchstaben und Sonderzeichen';
+                        break;
+                    case 'auth/operation-not-allowed':
+                        message = 'Registrierung ist derzeit deaktiviert';
+                        break;
+                    case 'auth/internal-error':
+                        message = 'Ein interner Fehler ist aufgetreten. Bitte versuche es später erneut';
+                        break;
+                    default:
+                        message = error.message || 'Registrierung fehlgeschlagen';
                 }
+
                 App.showNotification('Registrierung fehlgeschlagen: ' + message, 'error');
+                this.setRegisterButtonLoading(false);
             });
+    },
+
+    setRegisterButtonLoading: function(isLoading) {
+        const button = document.getElementById('register-button');
+        const buttonText = document.getElementById('register-button-text');
+        const loadingSpinner = document.getElementById('register-loading');
+
+        if (!button) return;
+
+        if (isLoading) {
+            button.disabled = true;
+            button.classList.add('opacity-75', 'cursor-not-allowed');
+            buttonText.textContent = 'Wird registriert...';
+            if (loadingSpinner) loadingSpinner.classList.remove('hidden');
+        } else {
+            button.disabled = false;
+            button.classList.remove('opacity-75', 'cursor-not-allowed');
+            buttonText.textContent = 'Registrieren';
+            if (loadingSpinner) loadingSpinner.classList.add('hidden');
+        }
     },
 
     handleLogout: function(e) {

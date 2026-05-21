@@ -9,7 +9,10 @@
       "Bash(php -l src/Controllers/AuthController.php)",
       "Bash(php -l index.php)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(npm list *)",
+      "Bash(npx playwright *)",
+      "Bash(php *)"
     ]
   }
 }

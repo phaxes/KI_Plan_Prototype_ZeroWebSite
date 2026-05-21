@@ -303,6 +303,9 @@ class Auth
     public static function setupSession($uid, $email, $displayName)
     {
         try {
+            // Regenerate session ID after login to prevent session fixation attacks
+            session_regenerate_id(true);
+
             // Verify user exists or create
             self::createOrUpdateUser($uid, $email, $displayName);
 
@@ -320,6 +323,8 @@ class Auth
         } catch (\Throwable $e) {
             error_log('Session setup error: ' . $e->getMessage());
             // Continue even if Firestore fails - just no admin status
+            // Still regenerate session ID even if Firestore fails
+            session_regenerate_id(true);
             $_SESSION['userId'] = $uid;
             $_SESSION['email'] = $email;
             $_SESSION['displayName'] = $displayName;
@@ -358,7 +363,21 @@ class Auth
      */
     public static function logout()
     {
+        // Unset all session variables
+        $_SESSION = array();
+
+        // Destroy the session
         session_destroy();
+
+        // Delete the session cookie
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000,
+                $params["path"], $params["domain"],
+                $params["secure"], $params["httponly"]
+            );
+        }
+
         return true;
     }
 }

@@ -1,7 +1,7 @@
 <div class="max-w-3xl">
     <h1 class="font-serif text-5xl font-black mb-12"><?= htmlspecialchars($pageTitle) ?></h1>
 
-    <form method="POST" action="/admin/blog/<?= htmlspecialchars($articleId) ?>/update" class="border-2 border-ink p-12">
+    <form id="blog-form" method="POST" action="/admin/blog/<?= htmlspecialchars($articleId) ?>/update" class="border-2 border-ink p-12">
         <div class="mb-8">
             <label class="block font-mono text-xs uppercase tracking-widest text-ink font-black mb-3">Titel *</label>
             <input type="text" name="title" required value="<?= htmlspecialchars($article['title']) ?>" class="w-full px-4 py-3 border-2 border-ink bg-paper text-ink font-mono focus:outline-none focus:border-primary transition">
@@ -37,9 +37,26 @@
 </div>
 
 <script>
+    const textarea = document.getElementById('editor');
     const editor = new SimpleMDE({
-        element: document.getElementById('editor'),
+        element: textarea,
         spellChecker: false,
         autoDownloadFontAwesome: false
+    });
+
+    // Before form submit, copy editor content to textarea
+    document.getElementById('blog-form').addEventListener('submit', function(e) {
+        // Get content from SimpleMDE editor
+        const content = editor.value();
+
+        // Validate content is not empty
+        if (!content || content.trim().length === 0) {
+            e.preventDefault();
+            alert('Bitte fülle den Inhalt aus');
+            return;
+        }
+
+        // Set the textarea value to the editor content
+        textarea.value = content;
     });
 </script>

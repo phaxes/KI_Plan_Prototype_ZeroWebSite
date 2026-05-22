@@ -1,7 +1,7 @@
 <div class="max-w-3xl">
     <h1 class="text-3xl font-bold mb-8"><?= htmlspecialchars($pageTitle) ?></h1>
 
-    <form method="POST" action="/admin/products/<?= htmlspecialchars($productId) ?>/update" class="bg-white rounded shadow p-8">
+    <form id="product-form" method="POST" action="/admin/products/<?= htmlspecialchars($productId) ?>/update" class="bg-white rounded shadow p-8">
         <div class="mb-6">
             <label class="block text-gray-700 font-semibold mb-2">Produktname *</label>
             <input type="text" name="name" required value="<?= htmlspecialchars($product['name']) ?>" class="w-full px-4 py-2 border rounded">
@@ -9,7 +9,7 @@
 
         <div class="mb-6">
             <label class="block text-gray-700 font-semibold mb-2">Beschreibung</label>
-            <textarea name="description" class="w-full px-4 py-2 border rounded" rows="4"><?= htmlspecialchars($product['description'] ?? '') ?></textarea>
+            <textarea id="editor" name="description" class="w-full px-4 py-2 border rounded" rows="4"><?= htmlspecialchars($product['description'] ?? '') ?></textarea>
         </div>
 
         <div class="mb-6">
@@ -45,3 +45,28 @@
         </div>
     </form>
 </div>
+
+<script>
+    const textarea = document.getElementById('editor');
+    const editor = new SimpleMDE({
+        element: textarea,
+        spellChecker: false,
+        autoDownloadFontAwesome: false
+    });
+
+    // Before form submit, copy editor content to textarea
+    document.getElementById('product-form').addEventListener('submit', function(e) {
+        // Get content from SimpleMDE editor
+        const content = editor.value();
+
+        // Validate content is not empty
+        if (!content || content.trim().length === 0) {
+            e.preventDefault();
+            alert('Bitte fülle die Beschreibung aus');
+            return;
+        }
+
+        // Set the textarea value to the editor content
+        textarea.value = content;
+    });
+</script>

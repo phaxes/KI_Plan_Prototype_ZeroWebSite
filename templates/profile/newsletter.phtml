@@ -3,7 +3,7 @@
         <h1 class="text-4xl font-bold mb-8"><?= htmlspecialchars($pageTitle) ?></h1>
 
         <div class="bg-white rounded shadow p-8">
-            <form id="newsletter-form">
+            <form id="profile-newsletter-form">
                 <div class="mb-6">
                     <label class="flex items-center cursor-pointer">
                         <input type="checkbox" id="subscribed" class="w-5 h-5" <?= ($subscribed ?? false) ? 'checked' : '' ?>>
@@ -54,7 +54,7 @@ document.getElementById('subscribed').addEventListener('change', function() {
 });
 
 // Handle form submission
-document.getElementById('newsletter-form').addEventListener('submit', function(e) {
+document.getElementById('profile-newsletter-form').addEventListener('submit', function(e) {
     e.preventDefault();
 
     const subscribed = document.getElementById('subscribed').checked;

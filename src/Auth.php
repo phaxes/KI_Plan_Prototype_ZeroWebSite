@@ -350,18 +350,22 @@ class Auth
             // Try gRPC-based approach first
             $firestore = Firebase::firestore();
             if ($firestore !== null) {
+                $userDoc = $firestore->collection('users')->document($uid);
+                $snapshot = $userDoc->snapshot();
+
                 $userData = [
                     'email' => $email,
                     'displayName' => $displayName,
                     'updatedAt' => new \DateTime()
                 ];
 
-                $userDoc = $firestore->collection('users')->document($uid);
-                $snapshot = $userDoc->snapshot();
-
                 if ($snapshot->exists()) {
+                    // Preserve existing isAdmin flag on update
+                    $existingData = $snapshot->data();
+                    $userData['isAdmin'] = $existingData['isAdmin'] ?? false;
                     $userDoc->update($userData);
                 } else {
+                    // New user - set default isAdmin
                     $userData['isAdmin'] = false;
                     $userData['createdAt'] = new \DateTime();
                     $userDoc->set($userData);
@@ -402,6 +406,9 @@ class Auth
                 // New user
                 $userData['isAdmin'] = false;
                 $userData['createdAt'] = new \DateTime();
+            } else {
+                // Preserve existing isAdmin flag on update
+                $userData['isAdmin'] = $existingUser['isAdmin'] ?? false;
             }
 
             $restClient->setDocument('users', $uid, $userData);

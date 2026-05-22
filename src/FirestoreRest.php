@@ -230,4 +230,38 @@ class FirestoreRest
         }
         return null;
     }
+
+    public function getCollection(string $collection): array
+    {
+        try {
+            $url = "https://firestore.googleapis.com/v1/projects/{$this->projectId}/databases/(default)/documents/{$collection}";
+
+            $response = $this->client->get($url, [
+                'headers' => [
+                    'Authorization' => "Bearer {$this->accessToken}",
+                ],
+            ]);
+
+            $data = json_decode((string)$response->getBody(), true);
+            $documents = [];
+
+            if (isset($data['documents']) && is_array($data['documents'])) {
+                foreach ($data['documents'] as $doc) {
+                    // Extract document ID from full path: "projects/xxx/databases/(default)/documents/collection/documentId"
+                    $pathParts = explode('/', $doc['name']);
+                    $docId = end($pathParts);
+
+                    if (isset($doc['fields'])) {
+                        $documents[$docId] = $this->decodeFieldsMap($doc['fields']);
+                    }
+                }
+            }
+
+            error_log("FirestoreRest: Retrieved " . count($documents) . " documents from {$collection}");
+            return $documents;
+        } catch (RequestException $e) {
+            error_log('FirestoreRest: List collection failed: ' . $e->getMessage());
+            return [];
+        }
+    }
 }

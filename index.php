@@ -120,4 +120,10 @@ $router->get('/admin/subscribers', 'Admin\\SubscriberController@index');
 $router->get('/admin/seed-w114', 'AdminSeedController@seedW114Data');
 $router->post('/admin/seed-w114', 'AdminSeedController@seedW114Data');
 
+// Test endpoint
+$router->get('/admin/seed-test', function() {
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'ready', 'message' => 'W114 seeding endpoint is active']);
+});
+
 $router->dispatch();

@@ -167,64 +167,137 @@ class Auth
                 return null;
             }
 
-            // Analyze token type
-            $tokenAnalysis = self::analyzeToken($idToken);
-            error_log('Token analysis: type=' . $tokenAnalysis['type'] . ', reason=' . $tokenAnalysis['reason']);
+            // Decode header and payload
+            $header = json_decode(base64_decode(strtr($tokenParts[0], '-_', '+/')), true);
+            $payload = json_decode(base64_decode(strtr($tokenParts[1], '-_', '+/')), true);
 
-            // Decode header and payload to inspect (without verification first)
-            try {
-                $header = json_decode(base64_decode(strtr($tokenParts[0], '-_', '+/')), true);
-                $payload = json_decode(base64_decode(strtr($tokenParts[1], '-_', '+/')), true);
-                error_log('Token header: ' . json_encode($header));
-                error_log('Token payload claims - iss: ' . ($payload['iss'] ?? 'missing') .
-                         ', aud: ' . ($payload['aud'] ?? 'missing') .
-                         ', exp: ' . ($payload['exp'] ?? 'missing') .
-                         ', iat: ' . ($payload['iat'] ?? 'missing') .
-                         ', current_time: ' . time());
-
-                // Check if token is expired
-                if (isset($payload['exp']) && $payload['exp'] < time()) {
-                    error_log('Token has expired: exp=' . $payload['exp'] . ', current=' . time());
-                }
-                if (isset($payload['iat']) && $payload['iat'] > time() + 60) {
-                    error_log('Token issued in future: iat=' . $payload['iat'] . ', current=' . time());
-                }
-            } catch (\Exception $e) {
-                error_log('Error decoding token payload: ' . $e->getMessage());
-            }
-
-            $auth = self::getAuthService();
-            if (!$auth) {
-                error_log('Token verification failed: Firebase Auth service not initialized');
+            if (!$payload) {
+                error_log('Token verification failed: could not decode payload');
                 return null;
             }
 
-            error_log('Attempting to verify token with Firebase Admin SDK');
-            $verifiedToken = $auth->verifyIdToken($idToken);
+            error_log('Token payload claims - iss: ' . ($payload['iss'] ?? 'missing') .
+                     ', aud: ' . ($payload['aud'] ?? 'missing') .
+                     ', exp: ' . ($payload['exp'] ?? 'missing') .
+                     ', iat: ' . ($payload['iat'] ?? 'missing'));
+
+            // Check if token is expired
+            if (isset($payload['exp']) && $payload['exp'] < time()) {
+                error_log('Token has expired: exp=' . $payload['exp'] . ', current=' . time());
+                return null;
+            }
+
+            // Check if token is issued in future
+            if (isset($payload['iat']) && $payload['iat'] > time() + 60) {
+                error_log('Token issued in future: iat=' . $payload['iat'] . ', current=' . time());
+                return null;
+            }
+
+            // Verify signature using Firebase public keys
+            $projectId = Config::get('FIREBASE_PROJECT_ID');
+            if (!$projectId) {
+                error_log('Token verification failed: FIREBASE_PROJECT_ID not configured');
+                return null;
+            }
+
+            // Get Firebase public keys
+            $publicKeys = self::getFirebasePublicKeys();
+            if (!$publicKeys) {
+                error_log('Token verification failed: could not fetch Firebase public keys');
+                return null;
+            }
+
+            // Get the key ID from token header
+            $kid = $header['kid'] ?? null;
+            if (!$kid || !isset($publicKeys[$kid])) {
+                error_log('Token verification failed: invalid key ID or key not found. kid=' . $kid);
+                error_log('Available keys: ' . implode(', ', array_keys($publicKeys)));
+                return null;
+            }
+
+            // Verify the signature
+            $publicKey = $publicKeys[$kid];
+            $signatureInput = $tokenParts[0] . '.' . $tokenParts[1];
+            $signature = base64_decode(strtr($tokenParts[2], '-_', '+/'));
+
+            if (!openssl_verify($signatureInput, $signature, $publicKey, 'sha256WithRSAEncryption')) {
+                error_log('Token verification failed: invalid signature');
+                return null;
+            }
+
+            // Additional claims validation
+            if (($payload['aud'] ?? null) !== $projectId) {
+                error_log('Token verification failed: invalid audience. Expected: ' . $projectId . ', Got: ' . ($payload['aud'] ?? 'missing'));
+                return null;
+            }
+
+            // Check issuer
+            $expectedIssuer = 'https://securetoken.google.com/' . $projectId;
+            if (($payload['iss'] ?? null) !== $expectedIssuer) {
+                error_log('Token verification failed: invalid issuer. Expected: ' . $expectedIssuer . ', Got: ' . ($payload['iss'] ?? 'missing'));
+                return null;
+            }
+
             error_log('Token verified successfully');
 
-            $uid = $verifiedToken->claims()->get('sub');
-
             return [
-                'uid' => $uid,
-                'email' => $verifiedToken->claims()->get('email'),
-                'emailVerified' => $verifiedToken->claims()->get('email_verified'),
-                'displayName' => $verifiedToken->claims()->get('name') ?? ''
+                'uid' => $payload['sub'] ?? null,
+                'email' => $payload['email'] ?? null,
+                'emailVerified' => $payload['email_verified'] ?? false,
+                'displayName' => $payload['name'] ?? ''
             ];
         } catch (\Throwable $e) {
             error_log('Token verification failed with exception: ' . get_class($e));
             error_log('Exception message: ' . $e->getMessage());
-
-            // Provide specific error message based on token type
-            $tokenAnalysis = self::analyzeToken($idToken);
-            if ($tokenAnalysis['type'] === 'custom') {
-                error_log('ERROR: Received Admin SDK custom token instead of Firebase ID token');
-                error_log('FIX: Client must use user.getIdToken() to get ID token, not Admin SDK createCustomToken()');
-            }
-
             error_log('Token verification stack trace: ' . $e->getTraceAsString());
             return null;
         }
+    }
+
+    private static function getFirebasePublicKeys()
+    {
+        $cacheKey = 'firebase_public_keys';
+        $cacheFile = sys_get_temp_dir() . '/' . $cacheKey . '.json';
+
+        // Check cache
+        if (file_exists($cacheFile)) {
+            $cached = json_decode(file_get_contents($cacheFile), true);
+            if (isset($cached['expires_at']) && $cached['expires_at'] > time()) {
+                return $cached['keys'] ?? null;
+            }
+        }
+
+        // Fetch from Google
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => 'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 10
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode !== 200) {
+            error_log('Failed to fetch Firebase public keys. HTTP ' . $httpCode);
+            return null;
+        }
+
+        $keys = json_decode($response, true);
+        if (!$keys) {
+            error_log('Invalid response from Google public keys endpoint');
+            return null;
+        }
+
+        // Cache for 1 hour
+        @mkdir(dirname($cacheFile), 0755, true);
+        file_put_contents($cacheFile, json_encode([
+            'keys' => $keys,
+            'expires_at' => time() + 3600
+        ]));
+
+        return $keys;
     }
 
     /**

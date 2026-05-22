@@ -13,15 +13,21 @@ RUN apt-get update && apt-get install -y \
     unzip \
     && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions
+# Install PHP extensions (openssl is critical for SSL/HTTPS)
+RUN apt-get install -y \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN docker-php-ext-install \
     curl \
     zip \
     dom \
-    && docker-php-ext-enable curl zip dom
+    openssl \
+    && docker-php-ext-enable curl zip dom openssl
 
-# Install Composer
+# Install Composer with proper PHP path
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
 # Install Node.js for Tailwind CSS
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
@@ -34,8 +40,21 @@ WORKDIR /var/www/html
 # Copy application files
 COPY . .
 
-# Install PHP dependencies with increased timeout
-RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --working-dir=/var/www/html
+# Install PHP dependencies with verbose output for debugging
+RUN composer install \
+    --no-dev \
+    --optimize-autoloader \
+    --no-interaction \
+    --prefer-dist \
+    --working-dir=/var/www/html \
+    --verbose \
+    || (echo "Composer install failed - trying with lower memory"; \
+        COMPOSER_MEMORY_LIMIT=-1 composer install \
+        --no-dev \
+        --optimize-autoloader \
+        --no-interaction \
+        --prefer-dist \
+        --working-dir=/var/www/html)
 
 # Install Node dependencies and build CSS
 RUN npm install --legacy-peer-deps && npm run build

@@ -116,4 +116,7 @@ $router->post('/admin/products/{id}/delete', 'Admin\\ProductAdminController@dele
 // Admin Subscribers
 $router->get('/admin/subscribers', 'Admin\\SubscriberController@index');
 
+// Admin Seed (protected by key)
+$router->post('/admin/seed-w114', 'AdminSeedController@seedW114Data');
+
 $router->dispatch();

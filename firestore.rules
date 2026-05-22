@@ -8,11 +8,8 @@ service cloud.firestore {
       allow delete: if false;
     }
     match /posts/{postId} {
-      allow read: if resource.data.published == true;
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null;
-      allow delete: if request.auth != null;
+      allow read: if resource.data.published == true || request.auth != null;
+      allow create, update, delete: if true;
     }
     match /products/{productId} {
       allow read: if true;

@@ -3,7 +3,7 @@ services:
     name: zero-cost-website
     runtime: docker
     dockerfilePath: ./Dockerfile
-    buildCommand: npm install --legacy-peer-deps && npm run build
+    buildCommand: composer install --no-dev && npm install --legacy-peer-deps && npm run build
     startCommand: apache2-foreground
     plan: free
     envVars:

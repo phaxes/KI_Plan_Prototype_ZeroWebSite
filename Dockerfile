@@ -35,7 +35,7 @@ WORKDIR /var/www/html
 COPY . .
 
 # Install PHP dependencies with increased timeout
-RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --working-dir=/var/www/html 2>&1 || true
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --working-dir=/var/www/html
 
 # Install Node dependencies and build CSS
 RUN npm install --legacy-peer-deps && npm run build

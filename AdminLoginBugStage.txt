@@ -1,0 +1,36 @@
+1. Führen Sie das Test-Skript aus (im Projekt-Root):
+  php test-admin-check.php
+  2. Prüfen Sie Ihre aktuelle Session nach dem Login:
+  Nach dem Anmelden gehen Sie zu: http://localhost:8000/debug/session (im Browser). Dies zeigt genau, was in der Session gespeichert ist, einschließlich ob isAdmin auf true gesetzt ist.
+  3. Prüfen Sie die PHP-Error-Logs:
+  Dies zeigt, ob Firestore-Fehler auftreten:
+  tail -f storage/logs/error.log  # falls vorhanden
+  # oder
+  tail -100 /var/log/php-fpm.log  # wenn PHP-FPM läuft
+
+  Zusätzliche Verbesserung: Ich werde auch das Frontend anpassen, sodass Admin-Benutzer nach dem Login automatisch zum Dashboard weitergeleitet werden:
+
+● Update(public/js/auth.js)
+
+Änderungen:
+
+  1. src/Auth.php — isUserAdmin() Methode gemacht flexibler:
+    - Handelt jetzt Boolean true, Integer 1, String "1" und String "true" richtig
+    - Besseres Error-Logging hinzugefügt
+  2. index.php — Debug-Endpoint hinzugefügt:
+    - /debug/session zeigt die aktuelle Session-Daten an
+  3. src/Controllers/AuthController.php — /auth/verify Response erweitert:
+    - Gibt jetzt isAdmin Status in der JSON-Response zurück  4. public/js/auth.js — Smart Redirects nach Login:
+    - Admin-Benutzer werden automatisch zu /admin weitergeleitet    - Standard-Benutzer zu /profile
+  5. test-admin-check.php — Neues Test-Skript zum Debuggen erstellt
+  Zum Testen:
+  # 1. Test-Skript ausführen
+  php test-admin-check.php
+
+  # 2. Nach dem Login folgende URL besuchen  # http://localhost:8000/debug/session
+  # um die Session-Daten zu prüfen (sollte isAdmin: true enthalten)
+
+  # 3. Logs prüfen
+  tail -100 /var/log/php-fpm.log
+  Das Hauptproblem war wahrscheinlich eine zu strikte Typprüfung der isAdmin-Flag. Versuchen Sie jetzt, sich anzumelden und lassen Sie mich wissen, ob Sie zu /admin weitergeleitet werden. Falls nicht, führen
+   Sie das Test-Skript aus und teilen Sie mir die Ausgabe mit!

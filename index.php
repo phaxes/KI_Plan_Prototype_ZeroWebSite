@@ -80,6 +80,12 @@ $router->post('/api/profile/newsletter-preference', 'ProfileController@updateNew
 // Newsletter
 $router->post('/api/newsletter/subscribe', 'NewsletterController@subscribe');
 
+// Debug session (remove in production)
+$router->get('/debug/session', function() {
+    header('Content-Type: application/json');
+    echo json_encode($_SESSION, JSON_PRETTY_PRINT);
+});
+
 // Admin Dashboard
 $router->get('/admin', 'Admin\\DashboardController@index');
 

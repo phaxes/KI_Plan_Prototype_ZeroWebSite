@@ -63,10 +63,7 @@ const AuthModule = {
         auth.signInWithEmailAndPassword(email, password)
             .then((userCredential) => {
                 App.showNotification('Erfolgreich angemeldet!', 'success');
-                this.syncSessionWithServer(userCredential.user);
-                setTimeout(() => {
-                    window.location.href = '/profile';
-                }, 1000);
+                this.syncSessionWithServer(userCredential.user, true); // true = isLoginFlow
             })
             .catch((error) => {
                 console.error('Login error:', error);
@@ -218,7 +215,7 @@ const AuthModule = {
         });
     },
 
-    syncSessionWithServer: function(user) {
+    syncSessionWithServer: function(user, isLoginFlow = false) {
         // Validate user object has required data
         if (!user || !user.email || !user.uid) {
             console.error('Cannot sync session: incomplete user object', user);
@@ -257,17 +254,51 @@ const AuthModule = {
                 return response.json().then(data => {
                     if (response.ok) {
                         console.log('Session verified on server:', data);
+                        // Store admin status for later use
+                        if (data.isAdmin === true) {
+                            sessionStorage.setItem('user_is_admin', 'true');
+                        } else {
+                            sessionStorage.removeItem('user_is_admin');
+                        }
+
+                        // If this is a login flow, redirect based on admin status
+                        if (isLoginFlow) {
+                            setTimeout(() => {
+                                if (data.isAdmin === true) {
+                                    console.log('User is admin, redirecting to /admin');
+                                    window.location.href = '/admin';
+                                } else {
+                                    console.log('User is not admin, redirecting to /profile');
+                                    window.location.href = '/profile';
+                                }
+                            }, 500);
+                        }
                     } else {
                         console.error('Session verification failed:', response.status);
                         console.error('Server response:', JSON.stringify(data, null, 2));
+                        if (isLoginFlow) {
+                            setTimeout(() => {
+                                window.location.href = '/profile';
+                            }, 1000);
+                        }
                     }
                 });
             })
             .catch((error) => {
                 console.error('Session sync error:', error);
+                if (isLoginFlow) {
+                    setTimeout(() => {
+                        window.location.href = '/profile';
+                    }, 1000);
+                }
             });
         }).catch((error) => {
             console.error('Failed to get ID token:', error);
+            if (isLoginFlow) {
+                setTimeout(() => {
+                    window.location.href = '/profile';
+                }, 1000);
+            }
         });
     }
 };

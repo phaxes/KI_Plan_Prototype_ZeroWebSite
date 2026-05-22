@@ -136,7 +136,11 @@ class AuthController
             Auth::setupSession($uid, $email, $displayName);
 
             http_response_code(200);
-            echo json_encode(['success' => true, 'message' => 'Session established']);
+            echo json_encode([
+                'success' => true,
+                'message' => 'Session established',
+                'isAdmin' => Auth::isAdmin()
+            ]);
 
         } catch (\Exception $e) {
             error_log('Token verification error: ' . $e->getMessage());

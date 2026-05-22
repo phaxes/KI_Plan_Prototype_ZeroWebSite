@@ -289,8 +289,14 @@ class Auth
             $user = self::getUserFromFirestore($uid);
 
             if ($user && isset($user['isAdmin'])) {
-                return $user['isAdmin'] === true;
+                $isAdmin = $user['isAdmin'];
+                // Handle various truthy representations of admin status
+                $result = ($isAdmin === true) || ($isAdmin === 1) || ($isAdmin === '1') || ($isAdmin === 'true');
+                error_log('Admin check: uid=' . $uid . ', isAdmin=' . var_export($isAdmin, true) . ', result=' . ($result ? 'true' : 'false'));
+                return $result;
             }
+
+            error_log('Admin check: isAdmin field not found for uid=' . $uid);
 
             // Fallback: Check if this is a hardcoded admin user
             // This allows admin access when Firestore is unavailable

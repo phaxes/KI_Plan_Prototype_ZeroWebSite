@@ -54,11 +54,16 @@ class ProfileController
                 return;
             }
 
-            // Update Firestore
-            Firebase::firestore()->collection('users')->document($userId)->update([
-                'displayName' => $displayName,
-                'updatedAt' => new \DateTime()
-            ]);
+            // Update Firestore (with null check)
+            $firestore = Firebase::firestore();
+            if ($firestore !== null) {
+                $firestore->collection('users')->document($userId)->update([
+                    'displayName' => $displayName,
+                    'updatedAt' => new \DateTime()
+                ]);
+            } else {
+                error_log('Profile update: Firestore unavailable, skipping');
+            }
 
             // Update session
             $_SESSION['displayName'] = $displayName;
@@ -97,10 +102,15 @@ class ProfileController
         $preferences = [];
 
         try {
-            // Get current preferences
-            $doc = Firebase::firestore()->collection('userNewsletterPreferences')->document($userId)->snapshot();
-            if ($doc->exists()) {
-                $preferences = $doc->data() ?? [];
+            // Get current preferences (with null check)
+            $firestore = Firebase::firestore();
+            if ($firestore !== null) {
+                $doc = $firestore->collection('userNewsletterPreferences')->document($userId)->snapshot();
+                if ($doc->exists()) {
+                    $preferences = $doc->data() ?? [];
+                }
+            } else {
+                error_log('Newsletter form: Firestore unavailable');
             }
         } catch (\Exception $e) {
             error_log('Newsletter preferences fetch error: ' . $e->getMessage());
@@ -136,12 +146,17 @@ class ProfileController
             $subscribed = $input['subscribed'] ?? false;
             $categories = $input['categories'] ?? [];
 
-            // Update Firestore
-            Firebase::firestore()->collection('userNewsletterPreferences')->document($userId)->set([
-                'subscribed' => (bool) $subscribed,
-                'categories' => (array) $categories,
-                'updatedAt' => new \DateTime()
-            ], ['merge' => true]);
+            // Update Firestore (with null check)
+            $firestore = Firebase::firestore();
+            if ($firestore !== null) {
+                $firestore->collection('userNewsletterPreferences')->document($userId)->set([
+                    'subscribed' => (bool) $subscribed,
+                    'categories' => (array) $categories,
+                    'updatedAt' => new \DateTime()
+                ], ['merge' => true]);
+            } else {
+                error_log('Newsletter preference update: Firestore unavailable, skipping');
+            }
 
             echo json_encode([
                 'success' => true,

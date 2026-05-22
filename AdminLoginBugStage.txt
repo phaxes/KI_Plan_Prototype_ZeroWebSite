@@ -35,4 +35,26 @@
   Das Hauptproblem war wahrscheinlich eine zu strikte Typprüfung der isAdmin-Flag. Versuchen Sie jetzt, sich anzumelden und lassen Sie mich wissen, ob Sie zu /admin weitergeleitet werden. Falls nicht, führen
    Sie das Test-Skript aus und teilen Sie mir die Ausgabe mit!
 
-Cx2gaIuFwVSkHHrvpjPMdlx6ao42
+userID: Cx2gaIuFwVSkHHrvpjPMdlx6ao42
+
+Nun führen Sie bitte auch folgende Befehle aus, um die Logs zu prüfen:
+
+  # Logs ansehen
+  tail -100 /var/log/php-fpm.log 2>/dev/null || tail -100 storage/logs/error.log 2>/dev/null || echo "Keine Logs gefunden"
+  # .env prüfen (nur Firebase-Teil)
+  echo "=== .env Firebase Config ===" && grep FIREBASE /mnt/c/KI/KI_Plan_Prototype_ZeroWebSite/plan-prototyp-produktion-v1-0-phaxes/.env
+  Nach dem Ausführen des Debug-Skripts und dem Prüfen der Logs, wird klar, was das Problem ist. Meine Vermutung: Die FIREBASE_SERVICE_ACCOUNT_JSON Umgebungsvariable ist nicht korrekt konfiguriert oder der
+  Service Account ist ungültig.
+  Parallel dazu werde ich auch den Fallback-Mechanismus robuster machen, sodass Admin-Zugang auch funktioniert, wenn Firestore temporär nicht erreichbar ist. Aber zuerst müssen wir verstehen, warum Firestore   null ist.
+  Was sehen Sie, wenn Sie diese Befehle ausführen?
+
+Perfekt! Das funktioniert jetzt! Die Admin-Authentifizierung ist aktiv. Aber ich sollte noch überprüfen, ob es andere Stellen gibt, wo auf Firestore zugegriffen wird, die auch die REST API benötigen.
+  Lassen Sie mich die erster Tests durchführen:
+  Versuchen Sie jetzt:
+  1. Öffnen Sie die Anwendung und melden Sie sich mit test@example.com an
+  2. Nach dem Login sollten Sie automatisch zu /admin weitergeleitet werden (nicht zu /profile)
+  3. Die Admin-Seite sollte vollständig funktionieren
+
+  Wenn das nicht funktioniert, öffnen Sie den Browser-Debugger (F12 → Console) und prüfen Sie auf Fehler.
+
+  Ich werde auch noch schnell die .gitignore und .env.example überprüfen, um sicherzustellen, dass die Konfiguration richtig dokumentiert ist:

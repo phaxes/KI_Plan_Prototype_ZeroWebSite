@@ -22,9 +22,15 @@ if (!$projectId || !$serviceAccountJson) {
     exit(1);
 }
 
-// Handle file path
+// Handle file path (localhost) or base64-encoded JSON (Render.com)
 if (file_exists($serviceAccountJson)) {
     $serviceAccountJson = file_get_contents($serviceAccountJson);
+} else {
+    // Try to decode if it's base64-encoded (Render.com production)
+    $decoded = base64_decode($serviceAccountJson, true);
+    if ($decoded !== false) {
+        $serviceAccountJson = $decoded;
+    }
 }
 
 try {

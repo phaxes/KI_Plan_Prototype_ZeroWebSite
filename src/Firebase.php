@@ -402,5 +402,215 @@ class Firebase
 
         return null;
     }
+
+    // ===== Products =====
+
+    public static function getProducts($published = true, $limit = 10, $offset = 0)
+    {
+        if (!self::isAvailable()) return [];
+
+        try {
+            $result = self::apiCall('GET', '/products');
+            if (!$result || !isset($result['documents'])) {
+                return [];
+            }
+
+            $products = [];
+            foreach ($result['documents'] as $doc) {
+                $data = self::documentToArray($doc);
+                if ($data === null) continue;
+
+                if ($published && !($data['active'] ?? false)) {
+                    continue;
+                }
+
+                $products[] = $data;
+            }
+
+            usort($products, function ($a, $b) {
+                $timeA = $a['createdAt'] instanceof \DateTime ? $a['createdAt']->getTimestamp() : 0;
+                $timeB = $b['createdAt'] instanceof \DateTime ? $b['createdAt']->getTimestamp() : 0;
+                return $timeB <=> $timeA;
+            });
+
+            return array_slice($products, $offset, $limit);
+        } catch (\Exception $e) {
+            error_log('getProducts: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    public static function getProductById($productId)
+    {
+        if (!self::isAvailable()) return null;
+
+        try {
+            $result = self::apiCall('GET', '/products/' . $productId);
+            return $result ? self::documentToArray($result) : null;
+        } catch (\Exception $e) {
+            error_log('getProductById: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    public static function createProduct($data)
+    {
+        if (!self::isAvailable()) return null;
+
+        try {
+            if (empty($data['name']) || empty($data['price'])) {
+                throw new \Exception('Missing required fields');
+            }
+
+            $productData = [
+                'name' => $data['name'],
+                'description' => $data['description'] ?? '',
+                'price' => floatval($data['price']),
+                'sku' => $data['sku'] ?? '',
+                'category' => $data['category'] ?? '',
+                'image' => $data['image'] ?? '',
+                'stock' => intval($data['stock'] ?? 0),
+                'active' => $data['active'] ?? true,
+                'createdAt' => new \DateTime(),
+                'updatedAt' => new \DateTime()
+            ];
+
+            $documentData = self::arrayToDocument($productData);
+            $result = self::apiCall('POST', '/products', ['fields' => $documentData]);
+
+            if ($result && isset($result['name'])) {
+                $parts = explode('/', $result['name']);
+                return end($parts);
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            error_log('createProduct: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    public static function updateProduct($productId, $data)
+    {
+        if (!self::isAvailable()) return false;
+
+        try {
+            $updateData = ['updatedAt' => new \DateTime()];
+
+            foreach (['name', 'description', 'price', 'sku', 'category', 'image', 'stock', 'active'] as $key) {
+                if (isset($data[$key])) {
+                    $updateData[$key] = $key === 'price' ? floatval($data[$key]) : $data[$key];
+                }
+            }
+
+            $documentData = self::arrayToDocument($updateData);
+            self::apiCall('PATCH', '/products/' . $productId, ['fields' => $documentData]);
+
+            return true;
+        } catch (\Exception $e) {
+            error_log('updateProduct: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public static function deleteProduct($productId)
+    {
+        if (!self::isAvailable()) return false;
+
+        try {
+            self::apiCall('DELETE', '/products/' . $productId);
+            return true;
+        } catch (\Exception $e) {
+            error_log('deleteProduct: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    // ===== Orders =====
+
+    public static function createOrder($data)
+    {
+        if (!self::isAvailable()) return null;
+
+        try {
+            if (empty($data['userId']) || empty($data['items'])) {
+                throw new \Exception('Missing required fields');
+            }
+
+            $orderData = [
+                'userId' => $data['userId'],
+                'items' => $data['items'],
+                'total' => floatval($data['total'] ?? 0),
+                'status' => $data['status'] ?? 'pending',
+                'shippingAddress' => $data['shippingAddress'] ?? '',
+                'billingAddress' => $data['billingAddress'] ?? '',
+                'paymentMethod' => $data['paymentMethod'] ?? '',
+                'notes' => $data['notes'] ?? '',
+                'createdAt' => new \DateTime(),
+                'updatedAt' => new \DateTime()
+            ];
+
+            $documentData = self::arrayToDocument($orderData);
+            $result = self::apiCall('POST', '/orders', ['fields' => $documentData]);
+
+            if ($result && isset($result['name'])) {
+                $parts = explode('/', $result['name']);
+                return end($parts);
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            error_log('createOrder: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    public static function getOrderById($orderId)
+    {
+        if (!self::isAvailable()) return null;
+
+        try {
+            $result = self::apiCall('GET', '/orders/' . $orderId);
+            return $result ? self::documentToArray($result) : null;
+        } catch (\Exception $e) {
+            error_log('getOrderById: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    public static function getUserOrders($userId, $limit = 10, $offset = 0)
+    {
+        if (!self::isAvailable()) return [];
+
+        try {
+            $result = self::apiCall('GET', '/orders');
+            if (!$result || !isset($result['documents'])) {
+                return [];
+            }
+
+            $orders = [];
+            foreach ($result['documents'] as $doc) {
+                $data = self::documentToArray($doc);
+                if ($data === null) continue;
+
+                if (($data['userId'] ?? null) !== $userId) {
+                    continue;
+                }
+
+                $orders[] = $data;
+            }
+
+            usort($orders, function ($a, $b) {
+                $timeA = $a['createdAt'] instanceof \DateTime ? $a['createdAt']->getTimestamp() : 0;
+                $timeB = $b['createdAt'] instanceof \DateTime ? $b['createdAt']->getTimestamp() : 0;
+                return $timeB <=> $timeA;
+            });
+
+            return array_slice($orders, $offset, $limit);
+        } catch (\Exception $e) {
+            error_log('getUserOrders: ' . $e->getMessage());
+            return [];
+        }
+    }
 }
 ?>

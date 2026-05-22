@@ -90,11 +90,24 @@ function encVal($v) {
     if (is_numeric($v)) return ['doubleValue' => (float)$v];
     if ($v instanceof DateTime) return ['timestampValue' => $v->format('Y-m-d\TH:i:s\Z')];
     if (is_array($v)) {
-        $enc = [];
-        foreach ($v as $k => $val) {
-            $enc[$k] = encVal($val);
+        // Check if sequential array (list) or associative array (map)
+        $isSequential = array_keys($v) === range(0, count($v) - 1);
+
+        if ($isSequential) {
+            // Sequential array - use arrayValue
+            $values = [];
+            foreach ($v as $item) {
+                $values[] = encVal($item);
+            }
+            return ['arrayValue' => ['values' => $values]];
+        } else {
+            // Associative array - use mapValue
+            $enc = [];
+            foreach ($v as $k => $val) {
+                $enc[$k] = encVal($val);
+            }
+            return ['mapValue' => ['fields' => $enc]];
         }
-        return ['mapValue' => ['fields' => $enc]];
     }
     return ['stringValue' => (string)$v];
 }

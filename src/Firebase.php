@@ -428,8 +428,8 @@ class Firebase
             }
 
             usort($products, function ($a, $b) {
-                $timeA = $a['createdAt'] instanceof \DateTime ? $a['createdAt']->getTimestamp() : 0;
-                $timeB = $b['createdAt'] instanceof \DateTime ? $b['createdAt']->getTimestamp() : 0;
+                $timeA = (isset($a['createdAt']) && $a['createdAt'] instanceof \DateTime) ? $a['createdAt']->getTimestamp() : 0;
+                $timeB = (isset($b['createdAt']) && $b['createdAt'] instanceof \DateTime) ? $b['createdAt']->getTimestamp() : 0;
                 return $timeB <=> $timeA;
             });
 

@@ -83,25 +83,25 @@ function getFirebaseToken($serviceAccount) {
     return $data['access_token'] ?? null;
 }
 
+// Encode data to Firestore format
+function encVal($v) {
+    if ($v === null) return ['nullValue' => null];
+    if (is_bool($v)) return ['booleanValue' => $v];
+    if (is_numeric($v)) return ['doubleValue' => (float)$v];
+    if ($v instanceof DateTime) return ['timestampValue' => $v->format('Y-m-d\TH:i:s\Z')];
+    if (is_array($v)) {
+        $enc = [];
+        foreach ($v as $k => $val) {
+            $enc[$k] = encVal($val);
+        }
+        return ['mapValue' => ['fields' => $enc]];
+    }
+    return ['stringValue' => (string)$v];
+}
+
 // Insert document via Firestore REST API
 function insertFirestoreDoc($projectId, $token, $collection, $docId, $data) {
     $url = "https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/$collection/$docId";
-
-    // Encode data to Firestore format
-    function encVal($v) {
-        if ($v === null) return ['nullValue' => null];
-        if (is_bool($v)) return ['booleanValue' => $v];
-        if (is_numeric($v)) return ['doubleValue' => (float)$v];
-        if ($v instanceof DateTime) return ['timestampValue' => $v->format('Y-m-d\TH:i:s\Z')];
-        if (is_array($v)) {
-            $enc = [];
-            foreach ($v as $k => $val) {
-                $enc[$k] = encVal($val);
-            }
-            return ['mapValue' => ['fields' => $enc]];
-        }
-        return ['stringValue' => (string)$v];
-    }
 
     $fields = [];
     foreach ($data as $k => $v) {

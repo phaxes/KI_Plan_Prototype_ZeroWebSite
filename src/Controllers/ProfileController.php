@@ -56,15 +56,24 @@ class ProfileController
                 return;
             }
 
-            // Update Firestore (with null check)
-            $firestore = Firebase::firestore();
-            if ($firestore !== null) {
-                $firestore->collection('users')->document($userId)->update([
-                    'displayName' => $displayName,
-                    'updatedAt' => new \DateTime()
-                ]);
-            } else {
-                error_log('Profile update: Firestore unavailable, skipping');
+            // Update Firestore via REST API if configured
+            try {
+                $projectId = Config::get('FIREBASE_PROJECT_ID');
+                $serviceAccountJson = Config::get('FIREBASE_SERVICE_ACCOUNT_JSON');
+
+                if ($projectId && $serviceAccountJson) {
+                    if (file_exists($serviceAccountJson)) {
+                        $serviceAccountJson = file_get_contents($serviceAccountJson);
+                    }
+
+                    $restClient = FirestoreRest::getInstance($projectId, $serviceAccountJson);
+                    $restClient->setDocument('users', $userId, [
+                        'displayName' => $displayName,
+                        'updatedAt' => new \DateTime()
+                    ]);
+                }
+            } catch (\Exception $e) {
+                error_log('Profile update: Firestore unavailable - ' . $e->getMessage());
             }
 
             // Update session
@@ -104,36 +113,19 @@ class ProfileController
         $preferences = [];
 
         try {
-            // Try gRPC-based approach first
-            $firestore = Firebase::firestore();
-            if ($firestore !== null) {
-                $doc = $firestore->collection('userNewsletterPreferences')->document($userId)->snapshot();
-                if ($doc->exists()) {
-                    $preferences = $doc->data() ?? [];
+            $projectId = Config::get('FIREBASE_PROJECT_ID');
+            $serviceAccountJson = Config::get('FIREBASE_SERVICE_ACCOUNT_JSON');
+
+            if ($projectId && $serviceAccountJson) {
+                if (file_exists($serviceAccountJson)) {
+                    $serviceAccountJson = file_get_contents($serviceAccountJson);
                 }
+
+                $restClient = FirestoreRest::getInstance($projectId, $serviceAccountJson);
+                $preferences = $restClient->getDocument('userNewsletterPreferences', $userId) ?? [];
             }
         } catch (\Exception $e) {
-            error_log('Newsletter form (gRPC): ' . $e->getMessage());
-        }
-
-        // Fallback to REST API if gRPC failed or returned empty
-        if (empty($preferences)) {
-            try {
-                $projectId = Config::get('FIREBASE_PROJECT_ID');
-                $serviceAccountJson = Config::get('FIREBASE_SERVICE_ACCOUNT_JSON');
-
-                if ($projectId && $serviceAccountJson) {
-                    // Handle file path
-                    if (file_exists($serviceAccountJson)) {
-                        $serviceAccountJson = file_get_contents($serviceAccountJson);
-                    }
-
-                    $restClient = FirestoreRest::getInstance($projectId, $serviceAccountJson);
-                    $preferences = $restClient->getDocument('userNewsletterPreferences', $userId) ?? [];
-                }
-            } catch (\Exception $e) {
-                error_log('Newsletter form (REST): ' . $e->getMessage());
-            }
+            error_log('Newsletter form: ' . $e->getMessage());
         }
 
         $title = 'Newsletter-Einstellungen';
@@ -166,58 +158,28 @@ class ProfileController
             $subscribed = (bool) ($input['subscribed'] ?? false);
             $categories = (array) ($input['categories'] ?? []);
 
-            $updated = false;
+            $projectId = Config::get('FIREBASE_PROJECT_ID');
+            $serviceAccountJson = Config::get('FIREBASE_SERVICE_ACCOUNT_JSON');
 
-            // Try gRPC-based approach first
-            try {
-                $firestore = Firebase::firestore();
-                if ($firestore !== null) {
-                    $firestore->collection('userNewsletterPreferences')->document($userId)->set([
-                        'subscribed' => $subscribed,
-                        'categories' => $categories,
-                        'updatedAt' => new \DateTime()
-                    ], ['merge' => true]);
-                    $updated = true;
-                    error_log('Newsletter preferences updated via gRPC');
+            if ($projectId && $serviceAccountJson) {
+                if (file_exists($serviceAccountJson)) {
+                    $serviceAccountJson = file_get_contents($serviceAccountJson);
                 }
-            } catch (\Exception $e) {
-                error_log('Newsletter preference update (gRPC): ' . $e->getMessage());
-            }
 
-            // Fallback to REST API
-            if (!$updated) {
-                try {
-                    $projectId = Config::get('FIREBASE_PROJECT_ID');
-                    $serviceAccountJson = Config::get('FIREBASE_SERVICE_ACCOUNT_JSON');
+                $restClient = FirestoreRest::getInstance($projectId, $serviceAccountJson);
+                $restClient->setDocument('userNewsletterPreferences', $userId, [
+                    'subscribed' => $subscribed,
+                    'categories' => $categories,
+                    'updatedAt' => new \DateTime()
+                ]);
 
-                    if ($projectId && $serviceAccountJson) {
-                        // Handle file path
-                        if (file_exists($serviceAccountJson)) {
-                            $serviceAccountJson = file_get_contents($serviceAccountJson);
-                        }
-
-                        $restClient = FirestoreRest::getInstance($projectId, $serviceAccountJson);
-                        $restClient->setDocument('userNewsletterPreferences', $userId, [
-                            'subscribed' => $subscribed,
-                            'categories' => $categories,
-                            'updatedAt' => new \DateTime()
-                        ]);
-                        $updated = true;
-                        error_log('Newsletter preferences updated via REST API');
-                    }
-                } catch (\Exception $e) {
-                    error_log('Newsletter preference update (REST): ' . $e->getMessage());
-                }
-            }
-
-            if ($updated) {
                 echo json_encode([
                     'success' => true,
                     'message' => 'Newsletter preferences updated'
                 ]);
             } else {
                 http_response_code(500);
-                echo json_encode(['error' => 'Failed to update preferences - Firestore unavailable']);
+                echo json_encode(['error' => 'Firestore not configured']);
             }
 
         } catch (\Exception $e) {

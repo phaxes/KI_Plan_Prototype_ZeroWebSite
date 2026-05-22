@@ -22,8 +22,7 @@ RUN docker-php-ext-install \
     curl \
     zip \
     dom \
-    openssl \
-    && docker-php-ext-enable curl zip dom openssl
+    && docker-php-ext-enable curl zip dom
 
 # Install Composer with proper PHP path
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer

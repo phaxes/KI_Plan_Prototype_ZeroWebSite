@@ -118,22 +118,9 @@ const AuthModule = {
                     displayName: name
                 }).then(() => {
                     console.log('User profile updated');
-                    // Create user document in Firestore
-                    return db.collection('users').doc(user.uid).set({
-                        displayName: name,
-                        email: email,
-                        isAdmin: false,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        address: {}
-                    });
-                }).then(() => {
-                    console.log('User document created in Firestore');
                     App.showNotification('Registrierung erfolgreich! Leite weiter zum Profil...', 'success');
-                    this.syncSessionWithServer(user);
-                    setTimeout(() => {
-                        window.location.href = '/profile';
-                    }, 1500);
+                    // Sync with server - this will create the user in Firestore on the backend
+                    this.syncSessionWithServer(user, true); // true = isLoginFlow
                 });
             })
             .catch((error) => {

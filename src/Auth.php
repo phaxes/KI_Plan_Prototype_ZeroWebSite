@@ -300,10 +300,44 @@ class Auth
             error_log('Create/update user error (gRPC): ' . $e->getMessage());
         }
 
-        // Firestore operations are not critical for authentication
-        // Just log and continue - user is already authenticated
-        error_log('Create/update user: Firestore unavailable, but authentication successful');
-        return true;
+        // Fallback to REST API
+        try {
+            $projectId = Config::get('FIREBASE_PROJECT_ID');
+            $serviceAccountJson = Config::get('FIREBASE_SERVICE_ACCOUNT_JSON');
+
+            if (!$projectId || !$serviceAccountJson) {
+                error_log('Create/update user error: Firebase not configured');
+                return false;
+            }
+
+            // Handle file path
+            if (file_exists($serviceAccountJson)) {
+                $serviceAccountJson = file_get_contents($serviceAccountJson);
+            }
+
+            // Check if user exists
+            $restClient = FirestoreRest::getInstance($projectId, $serviceAccountJson);
+            $existingUser = $restClient->getDocument('users', $uid);
+
+            $userData = [
+                'email' => $email,
+                'displayName' => $displayName,
+                'updatedAt' => new \DateTime()
+            ];
+
+            if (!$existingUser) {
+                // New user
+                $userData['isAdmin'] = false;
+                $userData['createdAt'] = new \DateTime();
+            }
+
+            $restClient->setDocument('users', $uid, $userData);
+            error_log('Create/update user: SUCCESS (REST API)');
+            return true;
+        } catch (\Exception $e) {
+            error_log('Create/update user error (REST): ' . $e->getMessage());
+            return false;
+        }
     }
 
     /**

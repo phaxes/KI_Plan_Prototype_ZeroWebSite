@@ -3,12 +3,23 @@
 
 const firebaseConfig = window.firebaseConfig || {};
 
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
+// Firebase globals - will be set if initialization succeeds
+let auth = null;
+let db = null;
 
-// Firebase globals
-const auth = firebase.auth();
-const db = firebase.firestore();
+// Initialize Firebase with error handling
+try {
+    if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+        console.error('Firebase config incomplete - missing apiKey or projectId');
+    } else {
+        firebase.initializeApp(firebaseConfig);
+        auth = firebase.auth();
+        db = firebase.firestore();
+        console.log('Firebase initialized successfully');
+    }
+} catch (error) {
+    console.error('Firebase initialization error:', error);
+}
 
 // Check auth state and sync with server
 auth.onAuthStateChanged((user) => {

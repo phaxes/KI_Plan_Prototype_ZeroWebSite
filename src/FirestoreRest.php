@@ -113,6 +113,86 @@ class FirestoreRest
         }
     }
 
+    public function setDocument(string $collection, string $documentId, array $data): bool
+    {
+        try {
+            $url = "https://firestore.googleapis.com/v1/projects/{$this->projectId}/databases/(default)/documents/{$collection}/{$documentId}";
+
+            $encodedData = [
+                'fields' => $this->encodeFieldsMap($data),
+            ];
+
+            $response = $this->client->patch($url, [
+                'headers' => [
+                    'Authorization' => "Bearer {$this->accessToken}",
+                    'Content-Type' => 'application/json',
+                ],
+                'json' => $encodedData,
+            ]);
+
+            error_log('FirestoreRest: Document set successfully');
+            return true;
+        } catch (RequestException $e) {
+            error_log('FirestoreRest: Set document failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    private function encodeFieldsMap(array $data): array
+    {
+        $result = [];
+        foreach ($data as $key => $value) {
+            $result[$key] = $this->encodeValue($value);
+        }
+        return $result;
+    }
+
+    private function encodeValue($value): array
+    {
+        if ($value === null) {
+            return ['nullValue' => null];
+        }
+
+        if (is_bool($value)) {
+            return ['booleanValue' => $value];
+        }
+
+        if (is_int($value)) {
+            return ['integerValue' => (string)$value];
+        }
+
+        if (is_float($value)) {
+            return ['doubleValue' => $value];
+        }
+
+        if (is_string($value)) {
+            return ['stringValue' => $value];
+        }
+
+        if ($value instanceof \DateTime || $value instanceof \DateTimeInterface) {
+            return ['timestampValue' => $value->format('c')];
+        }
+
+        if (is_array($value)) {
+            // Check if it's a sequential array (list) or associative (map)
+            if (array_keys($value) === range(0, count($value) - 1)) {
+                return [
+                    'arrayValue' => [
+                        'values' => array_map(fn($v) => $this->encodeValue($v), $value),
+                    ],
+                ];
+            } else {
+                return [
+                    'mapValue' => [
+                        'fields' => $this->encodeFieldsMap($value),
+                    ],
+                ];
+            }
+        }
+
+        return ['stringValue' => (string)$value];
+    }
+
     private function decodeFieldsMap(array $fieldsMap): array
     {
         $result = [];

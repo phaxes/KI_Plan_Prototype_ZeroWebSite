@@ -301,24 +301,10 @@ class Auth
     }
 
     /**
-     * Get user from Firestore (using REST API as fallback)
+     * Get user from Firestore (using REST API)
      */
     public static function getUserFromFirestore($uid)
     {
-        try {
-            // Try gRPC-based Kreait first
-            $firestore = Firebase::firestore();
-            if ($firestore !== null) {
-                $doc = $firestore->collection('users')->document($uid)->snapshot();
-                if ($doc->exists()) {
-                    return $doc->data();
-                }
-            }
-        } catch (\Exception $e) {
-            error_log('Get user error (gRPC): ' . $e->getMessage());
-        }
-
-        // Fallback to REST API
         try {
             $projectId = Config::get('FIREBASE_PROJECT_ID');
             $serviceAccountJson = Config::get('FIREBASE_SERVICE_ACCOUNT_JSON');
@@ -347,44 +333,12 @@ class Auth
     public static function createOrUpdateUser($uid, $email, $displayName = '')
     {
         try {
-            // Try gRPC-based approach first
-            $firestore = Firebase::firestore();
-            if ($firestore !== null) {
-                $userDoc = $firestore->collection('users')->document($uid);
-                $snapshot = $userDoc->snapshot();
-
-                $userData = [
-                    'email' => $email,
-                    'displayName' => $displayName,
-                    'updatedAt' => new \DateTime()
-                ];
-
-                if ($snapshot->exists()) {
-                    // Preserve existing isAdmin flag on update
-                    $existingData = $snapshot->data();
-                    $userData['isAdmin'] = $existingData['isAdmin'] ?? false;
-                    $userDoc->update($userData);
-                } else {
-                    // New user - set default isAdmin
-                    $userData['isAdmin'] = false;
-                    $userData['createdAt'] = new \DateTime();
-                    $userDoc->set($userData);
-                }
-
-                return true;
-            }
-        } catch (\Exception $e) {
-            error_log('Create/update user error (gRPC): ' . $e->getMessage());
-        }
-
-        // Fallback to REST API
-        try {
             $projectId = Config::get('FIREBASE_PROJECT_ID');
             $serviceAccountJson = Config::get('FIREBASE_SERVICE_ACCOUNT_JSON');
 
             if (!$projectId || !$serviceAccountJson) {
                 error_log('Create/update user error: Firebase not configured');
-                return false;
+                return true; // Don't fail auth if Firestore is unavailable
             }
 
             // Handle file path
@@ -412,11 +366,12 @@ class Auth
             }
 
             $restClient->setDocument('users', $uid, $userData);
-            error_log('Create/update user: SUCCESS (REST API)');
+            error_log('Create/update user: SUCCESS');
             return true;
         } catch (\Exception $e) {
-            error_log('Create/update user error (REST): ' . $e->getMessage());
-            return false;
+            error_log('Create/update user error: ' . $e->getMessage());
+            // Don't fail authentication if Firestore is unavailable
+            return true;
         }
     }
 

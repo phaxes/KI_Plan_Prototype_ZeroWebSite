@@ -100,7 +100,7 @@ function encVal($v) {
 }
 
 // Insert document via Firestore REST API
-function insertFirestoreDoc($projectId, $token, $collection, $docId, $data) {
+function insertFirestoreDoc($projectId, $token, $collection, $docId, $data, &$errors = null) {
     $url = "https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/$collection/$docId";
 
     $fields = [];
@@ -127,7 +127,17 @@ function insertFirestoreDoc($projectId, $token, $collection, $docId, $data) {
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
-    return $httpCode >= 200 && $httpCode < 300;
+    $success = $httpCode >= 200 && $httpCode < 300;
+    if (!$success && is_array($errors)) {
+        $errors[] = [
+            'docId' => $docId,
+            'collection' => $collection,
+            'httpCode' => $httpCode,
+            'response' => json_decode($response, true)
+        ];
+    }
+
+    return $success;
 }
 
 try {
@@ -137,6 +147,7 @@ try {
     }
 
     $results = ['news' => 0, 'blog' => 0, 'products' => 0];
+    $errors = [];
 
     // NEWS
     $newsData = [
@@ -153,7 +164,7 @@ try {
     ];
 
     foreach ($newsData as $i => $item) {
-        if (insertFirestoreDoc($projectId, $token, 'news', 'news-' . ($i + 1), $item)) {
+        if (insertFirestoreDoc($projectId, $token, 'news', 'news-' . ($i + 1), $item, $errors)) {
             $results['news']++;
         }
     }
@@ -173,7 +184,7 @@ try {
     ];
 
     foreach ($blogData as $i => $item) {
-        if (insertFirestoreDoc($projectId, $token, 'blog', 'blog-' . ($i + 1), $item)) {
+        if (insertFirestoreDoc($projectId, $token, 'blog', 'blog-' . ($i + 1), $item, $errors)) {
             $results['blog']++;
         }
     }
@@ -203,7 +214,7 @@ try {
     ];
 
     foreach ($productData as $i => $item) {
-        if (insertFirestoreDoc($projectId, $token, 'products', 'product-' . ($i + 1), $item)) {
+        if (insertFirestoreDoc($projectId, $token, 'products', 'product-' . ($i + 1), $item, $errors)) {
             $results['products']++;
         }
     }
@@ -212,7 +223,8 @@ try {
         'success' => true,
         'results' => $results,
         'total' => $results['news'] + $results['blog'] + $results['products'],
-        'timestamp' => date('Y-m-d H:i:s')
+        'timestamp' => date('Y-m-d H:i:s'),
+        'errors' => $errors
     ]);
 
 } catch (Exception $e) {

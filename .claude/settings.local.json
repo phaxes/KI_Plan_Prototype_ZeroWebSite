@@ -14,7 +14,9 @@
       "Bash(npx playwright *)",
       "Bash(php *)",
       "Bash(chmod +x test-render.sh)",
-      "Bash(./test-render.sh)"
+      "Bash(./test-render.sh)",
+      "WebSearch",
+      "Bash(curl *)"
     ]
   }
 }

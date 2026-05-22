@@ -67,6 +67,11 @@ document.getElementById('newsletter-form').addEventListener('submit', function(e
         return;
     }
 
+    const button = document.querySelector('button[type="submit"]');
+    const originalButtonText = button.textContent;
+    button.disabled = true;
+    button.textContent = 'Wird gespeichert...';
+
     fetch('/api/profile/newsletter-preference', {
         method: 'POST',
         headers: {
@@ -77,9 +82,18 @@ document.getElementById('newsletter-form').addEventListener('submit', function(e
             categories: categories
         })
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json().then(data => ({
+            ok: response.ok,
+            status: response.status,
+            data: data
+        }));
+    })
+    .then(({ok, status, data}) => {
+        console.log('Response data:', data);
+
+        if (ok && data.success) {
             const message = subscribed
                 ? 'Newsletter-Einstellungen aktualisiert!'
                 : 'Du hast dich vom Newsletter abgemeldet';
@@ -89,12 +103,17 @@ document.getElementById('newsletter-form').addEventListener('submit', function(e
                 window.location.reload();
             }, 1500);
         } else {
+            console.error('API error:', status, data);
             App.showNotification('Fehler: ' + (data.error || 'Unbekannter Fehler'), 'error');
+            button.disabled = false;
+            button.textContent = originalButtonText;
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        App.showNotification('Fehler beim Speichern', 'error');
+        console.error('Network error:', error);
+        App.showNotification('Fehler beim Speichern: ' + error.message, 'error');
+        button.disabled = false;
+        button.textContent = originalButtonText;
     });
 });
 </script>

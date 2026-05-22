@@ -5,6 +5,8 @@ namespace App\Controllers;
 use App\View;
 use App\Middleware\AuthMiddleware;
 use App\Firebase;
+use App\Config;
+use App\FirestoreRest;
 
 class ProfileController
 {

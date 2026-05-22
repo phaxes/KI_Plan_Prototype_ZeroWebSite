@@ -1,19 +1,27 @@
 // Firebase Authentication Module
 const AuthModule = {
     init: function() {
+        console.log('AuthModule.init() called');
         this.setupEventListeners();
         this.checkAuthState();
     },
 
     setupEventListeners: function() {
+        console.log('Setting up event listeners...');
+
         const loginForm = document.getElementById('login-form');
+        console.log('Login form found:', !!loginForm);
         if (loginForm) {
             loginForm.addEventListener('submit', (e) => this.handleLogin(e));
         }
 
         const registerForm = document.getElementById('register-form');
+        console.log('Register form found:', !!registerForm);
         if (registerForm) {
             registerForm.addEventListener('submit', (e) => this.handleRegister(e));
+            console.log('Register form event listener attached');
+        } else {
+            console.warn('Register form not found on this page');
         }
 
         // Handle logout links - intercept them to call Firebase signOut
@@ -73,10 +81,20 @@ const AuthModule = {
 
     handleRegister: function(e) {
         e.preventDefault();
+        console.log('handleRegister called');
+
+        if (!auth) {
+            App.showNotification('Firebase nicht initialisiert. Bitte laden Sie die Seite neu.', 'error');
+            console.error('Firebase auth not initialized');
+            return;
+        }
+
         const name = document.getElementById('name').value.trim();
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
         const passwordConfirm = document.getElementById('password-confirm').value;
+
+        console.log('Register attempt - email:', email);
 
         // Validation
         if (!name || !email || !password || !passwordConfirm) {
@@ -111,6 +129,7 @@ const AuthModule = {
 
         auth.createUserWithEmailAndPassword(email, password)
             .then((userCredential) => {
+                console.log('Firebase user created:', userCredential.user.uid);
                 const user = userCredential.user;
 
                 // Update user profile
@@ -125,6 +144,7 @@ const AuthModule = {
             })
             .catch((error) => {
                 console.error('Register error:', error);
+                console.error('Error code:', error.code);
                 let message = error.message;
 
                 // Better error messages

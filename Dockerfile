@@ -14,15 +14,13 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions (openssl is critical for SSL/HTTPS)
-RUN apt-get install -y \
+RUN apt-get update && apt-get install -y \
     openssl \
     && rm -rf /var/lib/apt/lists/*
 
 RUN docker-php-ext-install \
-    curl \
     zip \
-    dom \
-    && docker-php-ext-enable curl zip dom
+    dom
 
 # Install Composer with proper PHP path
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer

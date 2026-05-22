@@ -177,7 +177,7 @@ try {
     ];
 
     foreach ($newsData as $i => $item) {
-        if (insertFirestoreDoc($projectId, $token, 'news', 'news-' . ($i + 1), $item, $errors)) {
+        if (insertFirestoreDoc($projectId, $token, 'posts', 'news-' . ($i + 1), $item, $errors)) {
             $results['news']++;
         }
     }
@@ -197,7 +197,7 @@ try {
     ];
 
     foreach ($blogData as $i => $item) {
-        if (insertFirestoreDoc($projectId, $token, 'blog', 'blog-' . ($i + 1), $item, $errors)) {
+        if (insertFirestoreDoc($projectId, $token, 'posts', 'blog-' . ($i + 1), $item, $errors)) {
             $results['blog']++;
         }
     }

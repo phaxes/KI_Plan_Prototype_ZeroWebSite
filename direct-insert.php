@@ -29,6 +29,12 @@ if (!$projectId || !$serviceAccountJson) {
 // Load service account
 if (file_exists($serviceAccountJson)) {
     $serviceAccountJson = file_get_contents($serviceAccountJson);
+} else {
+    // Decode base64 if not a file path (Render.com environment)
+    $decoded = base64_decode($serviceAccountJson, true);
+    if ($decoded !== false) {
+        $serviceAccountJson = $decoded;
+    }
 }
 
 $serviceAccount = json_decode($serviceAccountJson, true);

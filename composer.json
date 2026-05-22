@@ -4,7 +4,6 @@
   "license": "MIT",
   "require": {
     "php": ">=8.2",
-    "kreait/firebase-php": "^7.4",
     "stripe/stripe-php": "^13.0",
     "drewm/mailchimp-api": "^2.5"
   },

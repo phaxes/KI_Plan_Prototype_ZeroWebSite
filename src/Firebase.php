@@ -2,161 +2,239 @@
 
 namespace App;
 
-use Kreait\Firebase\Factory;
-use Kreait\Firebase\ServiceAccount;
+use Google\Cloud\Core\GeoPoint;
 
 class Firebase
 {
-    private static $firestore = null;
-    private static $instance = null;
-    private static $available = null;
+    private static $accessToken = null;
+    private static $projectId = null;
+    private static $serviceAccount = null;
 
-    public static function getInstance()
+    private static function getServiceAccount()
     {
-        if (self::$instance === null) {
-            $serviceAccountJson = Config::get('FIREBASE_SERVICE_ACCOUNT_JSON');
+        if (self::$serviceAccount !== null) {
+            return self::$serviceAccount;
+        }
 
-            if (!$serviceAccountJson || $serviceAccountJson === '/dev/null') {
-                error_log('Firebase: Service account not configured');
-                return null;
+        $serviceAccountJson = Config::get('FIREBASE_SERVICE_ACCOUNT_JSON');
+
+        if (!$serviceAccountJson || $serviceAccountJson === '/dev/null') {
+            error_log('Firebase: Service account not configured');
+            return null;
+        }
+
+        // Handle both file path (localhost) and base64-encoded JSON (Render)
+        if (!file_exists($serviceAccountJson)) {
+            // Try to decode if it's base64-encoded
+            $decoded = base64_decode($serviceAccountJson, true);
+            if ($decoded !== false) {
+                $serviceAccountJson = $decoded;
             }
+        } else {
+            // Read from file
+            $serviceAccountJson = file_get_contents($serviceAccountJson);
+        }
 
-            // Handle both file path (localhost) and base64-encoded JSON (Render)
-            if (!file_exists($serviceAccountJson)) {
-                // Try to decode if it's base64-encoded
-                $decoded = base64_decode($serviceAccountJson, true);
-                if ($decoded !== false) {
-                    $serviceAccountJson = $decoded;
-                }
+        $parsed = json_decode($serviceAccountJson, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            error_log('Firebase: Invalid JSON in FIREBASE_SERVICE_ACCOUNT_JSON: ' . json_last_error_msg());
+            return null;
+        }
 
-                // Now validate JSON
-                $parsed = json_decode($serviceAccountJson, true);
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    error_log('Firebase: Invalid JSON in FIREBASE_SERVICE_ACCOUNT_JSON: ' . json_last_error_msg());
-                    return null;
-                }
+        self::$serviceAccount = $parsed;
+        return self::$serviceAccount;
+    }
 
-                // Try to create temporary file for kreait library
-                $tempFile = self::createTempServiceAccountFile($serviceAccountJson);
-                if ($tempFile) {
-                    $serviceAccountJson = $tempFile;
-                } else {
-                    error_log('Firebase: Could not create temporary service account file');
-                    return null;
-                }
-            }
+    private static function getAccessToken()
+    {
+        if (self::$accessToken !== null) {
+            return self::$accessToken;
+        }
 
-            try {
-                $factory = new Factory();
-                self::$instance = $factory->withServiceAccount($serviceAccountJson);
-            } catch (\Exception $e) {
-                error_log('Firebase init: ' . $e->getMessage());
-                return null;
+        $serviceAccount = self::getServiceAccount();
+        if (!$serviceAccount) {
+            return null;
+        }
+
+        // Get or refresh access token
+        $cacheFile = sys_get_temp_dir() . '/firebase_token_cache.json';
+        if (file_exists($cacheFile)) {
+            $cache = json_decode(file_get_contents($cacheFile), true);
+            if ($cache && isset($cache['expires_at']) && $cache['expires_at'] > time() + 300) {
+                self::$accessToken = $cache['access_token'];
+                return self::$accessToken;
             }
         }
 
-        return self::$instance;
-    }
-
-    private static function createTempServiceAccountFile($jsonContent)
-    {
-        // Try multiple possible temp directories
-        $tempDirs = [
-            sys_get_temp_dir(),
-            '/tmp',
-            getcwd() . '/.cache',
-            __DIR__ . '/../.cache'
+        // Create JWT and exchange for access token
+        $now = time();
+        $header = ['alg' => 'RS256', 'typ' => 'JWT'];
+        $payload = [
+            'iss' => $serviceAccount['client_email'],
+            'scope' => 'https://www.googleapis.com/auth/cloud-platform',
+            'aud' => 'https://oauth2.googleapis.com/token',
+            'exp' => $now + 3600,
+            'iat' => $now
         ];
 
-        foreach ($tempDirs as $dir) {
-            if (!is_dir($dir)) {
-                @mkdir($dir, 0755, true);
-            }
+        $headerEncoded = rtrim(strtr(base64_encode(json_encode($header)), '+/', '-_'), '=');
+        $payloadEncoded = rtrim(strtr(base64_encode(json_encode($payload)), '+/', '-_'), '=');
+        $signatureInput = $headerEncoded . '.' . $payloadEncoded;
 
-            if (is_dir($dir) && is_writable($dir)) {
-                $tempFile = $dir . '/firebase_sa_' . uniqid() . '.json';
-                if (file_put_contents($tempFile, $jsonContent) !== false) {
-                    @chmod($tempFile, 0600);
-                    error_log('Created temp service account file: ' . $tempFile);
-                    return $tempFile;
-                }
-            }
+        $privateKey = openssl_pkey_get_private($serviceAccount['private_key']);
+        if (!$privateKey) {
+            error_log('Firebase: Invalid private key format');
+            return null;
         }
 
-        error_log('Could not create temp service account file in any directory. Tried: ' . implode(', ', $tempDirs));
-        return null;
+        openssl_sign($signatureInput, $signature, $privateKey, 'sha256');
+
+        $signatureEncoded = rtrim(strtr(base64_encode($signature), '+/', '-_'), '=');
+        $jwt = $signatureInput . '.' . $signatureEncoded;
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => 'https://oauth2.googleapis.com/token',
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => http_build_query([
+                'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+                'assertion' => $jwt
+            ]),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 30
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode !== 200) {
+            error_log('Firebase: Failed to get access token. Response: ' . $response);
+            return null;
+        }
+
+        $tokenData = json_decode($response, true);
+        if (!isset($tokenData['access_token'])) {
+            error_log('Firebase: No access token in response');
+            return null;
+        }
+
+        self::$accessToken = $tokenData['access_token'];
+
+        // Cache the token
+        @mkdir(dirname($cacheFile), 0755, true);
+        file_put_contents($cacheFile, json_encode([
+            'access_token' => $tokenData['access_token'],
+            'expires_at' => time() + $tokenData['expires_in'] - 600
+        ]));
+
+        return self::$accessToken;
     }
 
-    public static function firestore()
+    private static function getProjectId()
     {
-        if (self::$firestore === null) {
-            $instance = self::getInstance();
-            if ($instance) {
-                try {
-                    self::$firestore = $instance->createFirestore();
-                } catch (\Exception $e) {
-                    error_log('Firestore error: ' . $e->getMessage());
-                }
-            }
+        if (self::$projectId === null) {
+            self::$projectId = Config::get('FIREBASE_PROJECT_ID');
         }
-        return self::$firestore;
+        return self::$projectId;
     }
 
     public static function isAvailable()
     {
-        if (self::$available === null) {
-            self::$available = self::firestore() !== null;
-        }
-        return self::$available;
+        return self::getAccessToken() !== null && self::getProjectId() !== null;
     }
 
-    private static function normalizeTimestamp($value): \DateTime
+    private static function normalizeTimestamp($value)
     {
         if ($value instanceof \Google\Cloud\Core\Timestamp) {
-            $dt = $value->get();
-            return \DateTime::createFromInterface($dt);
+            return $value->get();
         }
-        if ($value instanceof \DateTimeInterface) {
-            return \DateTime::createFromInterface($value);
+        if (is_array($value) && isset($value['_seconds'])) {
+            return \DateTime::createFromFormat('U', $value['_seconds']);
+        }
+        if ($value instanceof \DateTime) {
+            return $value;
         }
         return new \DateTime();
     }
 
-    // ===== Posts (News/Blog) =====
+    private static function apiCall($method, $path, $data = null)
+    {
+        $token = self::getAccessToken();
+        if (!$token) {
+            error_log('Firebase API: No access token');
+            return null;
+        }
+
+        $projectId = self::getProjectId();
+        $url = "https://firestore.googleapis.com/v1/projects/{$projectId}/databases/(default)/documents{$path}";
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_CUSTOMREQUEST => $method,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTPHEADER => [
+                'Authorization: Bearer ' . $token,
+                'Content-Type: application/json'
+            ]
+        ]);
+
+        if ($data !== null) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        }
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode >= 400) {
+            error_log('Firebase API Error (' . $httpCode . '): ' . $response);
+            return null;
+        }
+
+        return json_decode($response, true);
+    }
 
     public static function getPosts($type = null, $published = null, $limit = 10, $offset = 0)
     {
         if (!self::isAvailable()) return [];
 
         try {
-            $query = self::firestore()->collection('posts');
-
-            if ($type) {
-                $query = $query->where('type', '==', $type);
+            // Get all posts
+            $result = self::apiCall('GET', '/posts');
+            if (!$result || !isset($result['documents'])) {
+                return [];
             }
-
-            if ($published !== null) {
-                $query = $query->where('published', '==', $published);
-            }
-
-            $query = $query->orderBy('createdAt', 'DESCENDING');
-            $documents = $query->offset($offset)->limit($limit + 1)->documents();
 
             $posts = [];
-            $count = 0;
-            foreach ($documents as $doc) {
-                if ($count >= $limit) break;
-                $data = $doc->data();
-                if (isset($data['createdAt'])) $data['createdAt'] = self::normalizeTimestamp($data['createdAt']);
-                if (isset($data['updatedAt'])) $data['updatedAt'] = self::normalizeTimestamp($data['updatedAt']);
-                $posts[] = [
-                    'id' => $doc->id(),
-                    ...$data
-                ];
-                $count++;
+            foreach ($result['documents'] as $doc) {
+                $data = self::documentToArray($doc);
+                if ($data === null) continue;
+
+                // Filter by type if specified
+                if ($type && ($data['type'] ?? null) !== $type) {
+                    continue;
+                }
+
+                // Filter by published if specified
+                if ($published !== null && ($data['published'] ?? false) !== $published) {
+                    continue;
+                }
+
+                $posts[] = $data;
             }
 
-            return $posts;
+            // Sort by createdAt descending
+            usort($posts, function ($a, $b) {
+                $timeA = $a['createdAt'] instanceof \DateTime ? $a['createdAt']->getTimestamp() : 0;
+                $timeB = $b['createdAt'] instanceof \DateTime ? $b['createdAt']->getTimestamp() : 0;
+                return $timeB <=> $timeA;
+            });
+
+            // Apply pagination
+            return array_slice($posts, $offset, $limit);
         } catch (\Exception $e) {
             error_log('getPosts: ' . $e->getMessage());
             return [];
@@ -168,19 +246,12 @@ class Firebase
         if (!self::isAvailable()) return null;
 
         try {
-            $document = self::firestore()->collection('posts')->document($postId)->snapshot();
-
-            if ($document->exists()) {
-                $data = $document->data();
-                if (isset($data['createdAt'])) $data['createdAt'] = self::normalizeTimestamp($data['createdAt']);
-                if (isset($data['updatedAt'])) $data['updatedAt'] = self::normalizeTimestamp($data['updatedAt']);
-                return [
-                    'id' => $document->id(),
-                    ...$data
-                ];
+            $result = self::apiCall('GET', '/posts/' . $postId);
+            if (!$result) {
+                return null;
             }
 
-            return null;
+            return self::documentToArray($result);
         } catch (\Exception $e) {
             error_log('getPostById: ' . $e->getMessage());
             return null;
@@ -208,10 +279,16 @@ class Firebase
                 'updatedAt' => new \DateTime()
             ];
 
-            $ref = self::firestore()->collection('posts')->newDocument();
-            $ref->set($postData);
+            $documentData = self::arrayToDocument($postData);
+            $result = self::apiCall('POST', '/posts', ['fields' => $documentData]);
 
-            return $ref->id();
+            if ($result && isset($result['name'])) {
+                // Extract document ID from name: "projects/.../documents/posts/docId"
+                $parts = explode('/', $result['name']);
+                return end($parts);
+            }
+
+            return null;
         } catch (\Exception $e) {
             error_log('createPost: ' . $e->getMessage());
             return null;
@@ -233,7 +310,8 @@ class Firebase
             if (isset($data['tags'])) $updateData['tags'] = $data['tags'];
             if (isset($data['imageUrl'])) $updateData['imageUrl'] = $data['imageUrl'];
 
-            self::firestore()->collection('posts')->document($postId)->set($updateData, ['merge' => true]);
+            $documentData = self::arrayToDocument($updateData);
+            self::apiCall('PATCH', '/posts/' . $postId, ['fields' => $documentData]);
 
             return true;
         } catch (\Exception $e) {
@@ -247,7 +325,7 @@ class Firebase
         if (!self::isAvailable()) return false;
 
         try {
-            self::firestore()->collection('posts')->document($postId)->delete();
+            self::apiCall('DELETE', '/posts/' . $postId);
             return true;
         } catch (\Exception $e) {
             error_log('deletePost: ' . $e->getMessage());
@@ -255,211 +333,74 @@ class Firebase
         }
     }
 
-    // ===== Products =====
-
-    public static function getProducts($published = true, $limit = 10, $offset = 0)
+    // Utility methods for Firebase document format conversion
+    private static function arrayToDocument($data)
     {
-        if (!self::isAvailable()) return [];
+        $fields = [];
+        foreach ($data as $key => $value) {
+            $fields[$key] = self::valueToFirestore($value);
+        }
+        return $fields;
+    }
 
-        try {
-            $query = self::firestore()->collection('products');
-
-            if ($published) {
-                $query = $query->where('active', '==', true);
+    private static function valueToFirestore($value)
+    {
+        if ($value === null) {
+            return ['nullValue' => null];
+        } elseif (is_bool($value)) {
+            return ['booleanValue' => $value];
+        } elseif (is_int($value) || is_float($value)) {
+            return ['doubleValue' => floatval($value)];
+        } elseif ($value instanceof \DateTime) {
+            return ['timestampValue' => $value->format('Y-m-d\TH:i:s\Z')];
+        } elseif (is_array($value)) {
+            if (empty($value)) {
+                return ['arrayValue' => ['values' => []]];
             }
-
-            $query = $query->orderBy('createdAt', 'DESCENDING');
-            $documents = $query->offset($offset)->limit($limit + 1)->documents();
-
-            $products = [];
-            $count = 0;
-            foreach ($documents as $doc) {
-                if ($count >= $limit) break;
-                $data = $doc->data();
-                if (isset($data['createdAt'])) $data['createdAt'] = self::normalizeTimestamp($data['createdAt']);
-                if (isset($data['updatedAt'])) $data['updatedAt'] = self::normalizeTimestamp($data['updatedAt']);
-                $products[] = [
-                    'id' => $doc->id(),
-                    ...$data
-                ];
-                $count++;
-            }
-
-            return $products;
-        } catch (\Exception $e) {
-            error_log('getProducts: ' . $e->getMessage());
-            return [];
+            return ['arrayValue' => ['values' => array_map([self::class, 'valueToFirestore'], $value)]];
+        } else {
+            return ['stringValue' => (string)$value];
         }
     }
 
-    public static function getProductById($productId)
+    private static function documentToArray($doc)
     {
-        if (!self::isAvailable()) return null;
-
-        try {
-            $document = self::firestore()->collection('products')->document($productId)->snapshot();
-
-            if ($document->exists()) {
-                $data = $document->data();
-                if (isset($data['createdAt'])) $data['createdAt'] = self::normalizeTimestamp($data['createdAt']);
-                if (isset($data['updatedAt'])) $data['updatedAt'] = self::normalizeTimestamp($data['updatedAt']);
-                return [
-                    'id' => $document->id(),
-                    ...$data
-                ];
-            }
-
-            return null;
-        } catch (\Exception $e) {
-            error_log('getProductById: ' . $e->getMessage());
+        if (!isset($doc['fields'])) {
             return null;
         }
+
+        $result = [];
+        $parts = explode('/', $doc['name']);
+        $result['id'] = end($parts);
+
+        foreach ($doc['fields'] as $key => $field) {
+            $result[$key] = self::firestoreToValue($field);
+        }
+
+        return $result;
     }
 
-    public static function createProduct($data)
+    private static function firestoreToValue($field)
     {
-        if (!self::isAvailable()) return null;
-
-        try {
-            if (empty($data['name']) || !isset($data['price'])) {
-                throw new \Exception('Missing required fields');
-            }
-
-            $productData = [
-                'name' => $data['name'],
-                'description' => $data['description'] ?? '',
-                'price' => floatval($data['price']),
-                'imageUrl' => $data['imageUrl'] ?? '',
-                'category' => $data['category'] ?? '',
-                'stock' => intval($data['stock'] ?? 0),
-                'active' => $data['active'] ?? true,
-                'createdAt' => new \DateTime(),
-                'updatedAt' => new \DateTime()
-            ];
-
-            $ref = self::firestore()->collection('products')->newDocument();
-            $ref->set($productData);
-
-            return $ref->id();
-        } catch (\Exception $e) {
-            error_log('createProduct: ' . $e->getMessage());
+        if (isset($field['nullValue'])) {
             return null;
+        } elseif (isset($field['booleanValue'])) {
+            return $field['booleanValue'];
+        } elseif (isset($field['integerValue'])) {
+            return intval($field['integerValue']);
+        } elseif (isset($field['doubleValue'])) {
+            return floatval($field['doubleValue']);
+        } elseif (isset($field['stringValue'])) {
+            return $field['stringValue'];
+        } elseif (isset($field['timestampValue'])) {
+            return \DateTime::createFromFormat('Y-m-d\TH:i:s\Z', $field['timestampValue']);
+        } elseif (isset($field['arrayValue'])) {
+            return array_map([self::class, 'firestoreToValue'], $field['arrayValue']['values'] ?? []);
+        } elseif (isset($field['mapValue'])) {
+            return self::documentToArray(['fields' => $field['mapValue']['fields']]);
         }
-    }
 
-    public static function updateProduct($productId, $data)
-    {
-        if (!self::isAvailable()) return false;
-
-        try {
-            $updateData = [
-                'updatedAt' => new \DateTime()
-            ];
-
-            if (isset($data['name'])) $updateData['name'] = $data['name'];
-            if (isset($data['description'])) $updateData['description'] = $data['description'];
-            if (isset($data['price'])) $updateData['price'] = floatval($data['price']);
-            if (isset($data['imageUrl'])) $updateData['imageUrl'] = $data['imageUrl'];
-            if (isset($data['category'])) $updateData['category'] = $data['category'];
-            if (isset($data['stock'])) $updateData['stock'] = intval($data['stock']);
-            if (isset($data['active'])) $updateData['active'] = $data['active'];
-
-            self::firestore()->collection('products')->document($productId)->set($updateData, ['merge' => true]);
-
-            return true;
-        } catch (\Exception $e) {
-            error_log('updateProduct: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    public static function deleteProduct($productId)
-    {
-        if (!self::isAvailable()) return false;
-
-        try {
-            self::firestore()->collection('products')->document($productId)->delete();
-            return true;
-        } catch (\Exception $e) {
-            error_log('deleteProduct: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    // ===== Orders =====
-
-    public static function createOrder($data)
-    {
-        if (!self::isAvailable()) return null;
-
-        try {
-            if (empty($data['userId']) || empty($data['items'])) {
-                throw new \Exception('Missing required fields');
-            }
-
-            $orderData = [
-                'userId' => $data['userId'],
-                'items' => $data['items'],
-                'total' => floatval($data['total'] ?? 0),
-                'status' => $data['status'] ?? 'pending',
-                'createdAt' => new \DateTime(),
-                'updatedAt' => new \DateTime()
-            ];
-
-            $ref = self::firestore()->collection('orders')->newDocument();
-            $ref->set($orderData);
-
-            return $ref->id();
-        } catch (\Exception $e) {
-            error_log('createOrder: ' . $e->getMessage());
-            return null;
-        }
-    }
-
-    public static function getOrderById($orderId)
-    {
-        if (!self::isAvailable()) return null;
-
-        try {
-            $document = self::firestore()->collection('orders')->document($orderId)->snapshot();
-
-            if ($document->exists()) {
-                return [
-                    'id' => $document->id(),
-                    ...$document->data()
-                ];
-            }
-
-            return null;
-        } catch (\Exception $e) {
-            error_log('getOrderById: ' . $e->getMessage());
-            return null;
-        }
-    }
-
-    public static function getUserOrders($userId)
-    {
-        if (!self::isAvailable()) return [];
-
-        try {
-            $documents = self::firestore()
-                ->collection('orders')
-                ->where('userId', '==', $userId)
-                ->orderBy('createdAt', 'DESCENDING')
-                ->documents();
-
-            $orders = [];
-            foreach ($documents as $doc) {
-                $orders[] = [
-                    'id' => $doc->id(),
-                    ...$doc->data()
-                ];
-            }
-
-            return $orders;
-        } catch (\Exception $e) {
-            error_log('getUserOrders: ' . $e->getMessage());
-            return [];
-        }
+        return null;
     }
 }
+?>

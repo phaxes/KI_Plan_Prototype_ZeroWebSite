@@ -1,16 +1,15 @@
 <?php
-// Test script to verify admin check logic
+// Start session BEFORE any output
+session_start();
 
 require_once __DIR__ . '/vendor/autoload.php';
 
 use App\Config;
 use App\Auth;
-use App\Firebase;
 
 Config::load();
 
-// Test data - update with actual test user UID
-$testUid = 'Cx2gaIuFwVSkHHrvpjPMdlx6ao42'; // test@example.com
+$testUid = 'Cx2gaIuFwVSkHHrvpjPMdlx6ao42';
 $testEmail = 'test@example.com';
 
 echo "=== Admin Check Test ===\n\n";
@@ -45,7 +44,6 @@ try {
 
 // Test 3: Simulate session setup
 echo "Test 3: Simulating session setup...\n";
-session_start();
 try {
     Auth::setupSession($testUid, $testEmail, 'Test User');
 
@@ -62,5 +60,6 @@ try {
 echo "Test 4: Checking Auth::isAdmin()...\n";
 $isAdminFromSession = Auth::isAdmin();
 echo "Auth::isAdmin() returned: " . ($isAdminFromSession ? 'true' : 'false') . "\n";
-echo "\nTest complete.\n";
+
+echo "\n✓ Test complete.\n";
 ?>

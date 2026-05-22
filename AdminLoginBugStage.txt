@@ -34,3 +34,5 @@
   tail -100 /var/log/php-fpm.log
   Das Hauptproblem war wahrscheinlich eine zu strikte Typprüfung der isAdmin-Flag. Versuchen Sie jetzt, sich anzumelden und lassen Sie mich wissen, ob Sie zu /admin weitergeleitet werden. Falls nicht, führen
    Sie das Test-Skript aus und teilen Sie mir die Ausgabe mit!
+
+Cx2gaIuFwVSkHHrvpjPMdlx6ao42

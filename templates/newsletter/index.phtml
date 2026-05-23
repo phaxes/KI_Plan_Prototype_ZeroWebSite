@@ -1,0 +1,146 @@
+<!-- Hero Section with Newsletter Form -->
+<section class="section-stats">
+    <div class="container mx-auto px-4 max-w-3xl">
+        <div class="text-center mb-12 reveal">
+            <p class="font-mono text-xs uppercase tracking-widest text-primary mb-4">Bleib informiert</p>
+            <h1 class="font-serif text-5xl md:text-7xl font-black mb-4">Newsletter abonnieren</h1>
+            <span class="accent-line"></span>
+        </div>
+
+        <p class="font-mono text-muted mb-12 text-center reveal reveal-delay-1">
+            Erhalte regelmäßig die neuesten News, Blog-Artikel und exklusive Updates direkt in dein Postfach
+        </p>
+
+        <!-- Newsletter Form -->
+        <form id="newsletter-subscribe-form" class="space-y-4 reveal reveal-delay-2">
+            <input type="text" id="newsletter-name" placeholder="Dein Name (optional)" class="w-full bg-transparent border-b-2 border-paper text-paper placeholder-muted px-4 py-3 focus:outline-none focus:border-primary transition font-mono">
+            <input type="email" id="newsletter-email-form" required placeholder="deine@email.de" class="w-full bg-transparent border-b-2 border-paper text-paper placeholder-muted px-4 py-3 focus:outline-none focus:border-primary transition font-mono">
+            <button type="submit" class="w-full border-2 border-primary bg-primary text-void px-8 py-3 font-mono text-xs uppercase tracking-widest font-black hover:bg-transparent hover:text-primary transition">
+                Jetzt abonnieren
+            </button>
+        </form>
+
+        <!-- Success Message (hidden by default) -->
+        <div id="newsletter-success" class="hidden text-center reveal reveal-delay-2">
+            <div class="mb-6">
+                <svg width="64" height="64" viewBox="0 0 64 64" fill="none" stroke="#B87333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto">
+                    <circle cx="32" cy="32" r="30"/>
+                    <polyline points="20 32 28 40 44 24"/>
+                </svg>
+            </div>
+            <h2 class="font-serif text-3xl md:text-5xl font-black mb-4">Danke für dein Abonnement!</h2>
+            <p class="font-mono text-muted mb-8">
+                Eine Bestätigungsemail ist unterwegs. Willkommen in unserer Community!
+            </p>
+            <a href="/" class="inline-block border-2 border-primary bg-primary text-void px-8 py-3 font-mono text-xs uppercase tracking-widest font-black hover:bg-transparent hover:text-primary transition">
+                Zur Startseite
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- What You'll Get Section -->
+<section class="section-light">
+    <div class="container mx-auto px-4">
+        <div class="mb-16 reveal">
+            <p class="font-mono text-xs uppercase tracking-widest text-primary mb-4">Das erwartet dich</p>
+            <h2 class="font-serif text-5xl md:text-7xl font-black">Was dich erwartet</h2>
+            <span class="accent-line accent-line--left"></span>
+        </div>
+
+        <!-- Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <!-- News Column -->
+            <div class="reveal">
+                <div class="mb-8">
+                    <p class="font-mono text-xs uppercase tracking-widest text-primary mb-2">Aktuell</p>
+                    <h3 class="font-serif text-3xl font-black">Neueste News</h3>
+                </div>
+
+                <div class="space-y-6">
+                    <?php if (!empty($latestNews)): ?>
+                        <?php foreach ($latestNews as $i => $item): ?>
+                            <article class="border-b-2 border-ink pb-6">
+                                <time class="font-mono text-xs uppercase tracking-widest text-primary">
+                                    <?= $item['createdAt']->format('d.m.Y') ?? date('d.m.Y') ?>
+                                </time>
+                                <h4 class="font-serif text-xl font-black mt-2 mb-2 line-clamp-2"><?= htmlspecialchars($item['title']) ?></h4>
+                                <p class="text-muted text-sm line-clamp-2 mb-3"><?= htmlspecialchars(substr(strip_tags($item['content']), 0, 80)) ?>...</p>
+                                <a href="/news/<?= htmlspecialchars($item['id']) ?>" class="text-primary hover:text-ink font-mono text-xs uppercase tracking-widest transition inline-block">Lesen →</a>
+                            </article>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <p class="text-muted font-mono">Noch keine News verfügbar.</p>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Blog Column -->
+            <div class="reveal reveal-delay-1">
+                <div class="mb-8">
+                    <p class="font-mono text-xs uppercase tracking-widest text-primary mb-2">Tipps & Insights</p>
+                    <h3 class="font-serif text-3xl font-black">Blog-Highlights</h3>
+                </div>
+
+                <div class="space-y-6">
+                    <?php if (!empty($latestBlog)): ?>
+                        <?php foreach ($latestBlog as $i => $item): ?>
+                            <article class="border-b-2 border-ink pb-6">
+                                <time class="font-mono text-xs uppercase tracking-widest text-primary">
+                                    <?= $item['createdAt']->format('d.m.Y') ?? date('d.m.Y') ?>
+                                </time>
+                                <h4 class="font-serif text-xl font-black mt-2 mb-2 line-clamp-2"><?= htmlspecialchars($item['title']) ?></h4>
+                                <p class="text-muted text-sm line-clamp-2 mb-3"><?= htmlspecialchars(substr(strip_tags($item['content']), 0, 80)) ?>...</p>
+                                <a href="/blog/<?= htmlspecialchars($item['id']) ?>" class="text-primary hover:text-ink font-mono text-xs uppercase tracking-widest transition inline-block">Lesen →</a>
+                            </article>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <p class="text-muted font-mono">Noch keine Blog-Artikel verfügbar.</p>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Newsletter JavaScript -->
+<script>
+document.getElementById('newsletter-subscribe-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const form = e.target;
+    const email = document.getElementById('newsletter-email-form').value.trim();
+    const name = document.getElementById('newsletter-name').value.trim();
+    const submitBtn = form.querySelector('button[type="submit"]');
+
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Wird abgesendet...';
+
+    try {
+        const res = await fetch('/api/newsletter/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, name })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            // Hide form, show success message
+            form.classList.add('hidden');
+            document.getElementById('newsletter-success').classList.remove('hidden');
+            App.showNotification('Danke für dein Abonnement!', 'success');
+        } else {
+            App.showNotification(data.error || 'Fehler beim Abonnieren', 'error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+    } catch (error) {
+        console.error('Newsletter signup error:', error);
+        App.showNotification('Verbindungsfehler – bitte versuche es später erneut', 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    }
+});
+</script>

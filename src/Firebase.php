@@ -661,5 +661,31 @@ class Firebase
             return false;
         }
     }
+
+    public static function createSubscriber(array $data): ?string
+    {
+        if (!self::isAvailable()) return null;
+
+        try {
+            $email = strtolower(trim($data['email']));
+            $docId = md5($email);
+
+            $subscriberData = [
+                'email' => $email,
+                'name' => $data['name'] ?? '',
+                'source' => $data['source'] ?? 'website',
+                'active' => true,
+                'subscribedAt' => $data['subscribedAt'] ?? new \DateTime(),
+            ];
+
+            $documentData = self::arrayToDocument($subscriberData);
+            $result = self::apiCall('PATCH', '/subscribers/' . $docId, ['fields' => $documentData]);
+
+            return $result ? $docId : null;
+        } catch (\Exception $e) {
+            error_log('createSubscriber: ' . $e->getMessage());
+            return null;
+        }
+    }
 }
 ?>

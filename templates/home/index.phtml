@@ -223,3 +223,42 @@
         </form>
     </div>
 </section>
+
+<script>
+document.getElementById('newsletter-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const email = document.getElementById('newsletter-email').value.trim();
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Wird abgesendet...';
+
+    try {
+        const res = await fetch('/api/newsletter/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            App.showNotification('Danke für dein Abonnement!', 'success');
+            e.target.reset();
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        } else {
+            App.showNotification(data.error || 'Fehler beim Abonnieren', 'error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+    } catch (error) {
+        console.error('Newsletter signup error:', error);
+        App.showNotification('Verbindungsfehler – bitte versuche es später erneut', 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    }
+});
+</script>

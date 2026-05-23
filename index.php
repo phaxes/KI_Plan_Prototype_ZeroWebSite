@@ -82,6 +82,7 @@ $router->get('/profile/newsletter', 'ProfileController@newsletterForm');
 $router->post('/api/profile/newsletter-preference', 'ProfileController@updateNewsletterPreference');
 
 // Newsletter
+$router->get('/newsletter', 'NewsletterController@landingPage');
 $router->post('/api/newsletter/subscribe', 'NewsletterController@subscribe');
 
 // Debug session (remove in production)

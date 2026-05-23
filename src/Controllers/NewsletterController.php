@@ -3,6 +3,8 @@
 namespace App\Controllers;
 
 use App\Firebase;
+use App\ResendMailer;
+use App\View;
 
 class NewsletterController
 {
@@ -11,8 +13,11 @@ class NewsletterController
         header('Content-Type: application/json');
 
         try {
-            $email = trim($post['email'] ?? '');
-            $name = trim($post['name'] ?? '');
+            $rawInput = file_get_contents('php://input');
+            $input = json_decode($rawInput, true) ?? [];
+
+            $email = trim($input['email'] ?? '');
+            $name = trim($input['name'] ?? '');
 
             if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 http_response_code(400);
@@ -20,7 +25,7 @@ class NewsletterController
                 return;
             }
 
-            // Save subscriber to Firestore (M2+)
+            // Save subscriber to Firestore
             $subscriberData = [
                 'email' => $email,
                 'name' => $name,
@@ -29,8 +34,11 @@ class NewsletterController
                 'active' => true
             ];
 
-            // For now, just simulate success (full Firestore + Mailchimp in M5)
-            // Firebase::createSubscriber($subscriberData);
+            $subscriberId = Firebase::createSubscriber($subscriberData);
+            if ($subscriberId) {
+                // Send welcome email via Resend (fire-and-forget, don't block on failure)
+                ResendMailer::sendWelcome($email, $name);
+            }
 
             http_response_code(200);
             echo json_encode(['success' => true, 'message' => 'Danke für dein Abonnement!']);
@@ -40,6 +48,19 @@ class NewsletterController
             http_response_code(500);
             echo json_encode(['error' => 'An error occurred. Please try again.']);
         }
+    }
+
+    public function landingPage($params = [], $post = [], $get = [])
+    {
+        $latestNews = Firebase::getPosts('news', true, 3, 0);
+        $latestBlog = Firebase::getPosts('blog', true, 3, 0);
+
+        echo View::render('newsletter/index', [
+            'title' => 'Newsletter',
+            'pageTitle' => 'Newsletter abonnieren',
+            'latestNews' => $latestNews ?? [],
+            'latestBlog' => $latestBlog ?? [],
+        ]);
     }
 
     public function unsubscribe($params = [], $post = [], $get = [])
@@ -55,7 +76,9 @@ class NewsletterController
                 return;
             }
 
-            // Unsubscribe logic will be in M5
+            // Unsubscribe logic: set active = false
+            $docId = md5(strtolower($email));
+            Firebase::updateSubscriber($docId, ['active' => false]);
 
             http_response_code(200);
             echo json_encode(['success' => true]);

@@ -222,8 +222,10 @@ class FirestoreRest
         if (isset($value['mapValue']['fields'])) {
             return $this->decodeFieldsMap($value['mapValue']['fields']);
         }
-        if (isset($value['arrayValue']['values'])) {
-            return array_map(fn($v) => $this->decodeValue($v), $value['arrayValue']['values']);
+        if (isset($value['arrayValue'])) {
+            return isset($value['arrayValue']['values'])
+                ? array_map(fn($v) => $this->decodeValue($v), $value['arrayValue']['values'])
+                : [];
         }
         if (isset($value['timestampValue'])) {
             return new \DateTime($value['timestampValue']);

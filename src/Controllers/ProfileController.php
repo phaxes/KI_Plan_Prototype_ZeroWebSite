@@ -110,6 +110,11 @@ class ProfileController
         AuthMiddleware::require();
 
         $userId = $_SESSION['userId'] ?? null;
+        if (!$userId) {
+            http_response_code(401);
+            header('Location: /login');
+            exit;
+        }
         $preferences = [];
 
         try {

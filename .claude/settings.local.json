@@ -17,7 +17,8 @@
       "Bash(./test-render.sh)",
       "WebSearch",
       "Bash(curl *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(grep *)"
     ]
   }
 }

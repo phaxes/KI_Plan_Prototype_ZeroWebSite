@@ -48,6 +48,7 @@ const AuthModule = {
                 // Only sync if we have all required data
                 if (user.email && user.uid) {
                     this.syncSessionWithServer(user);
+                    App.updateCartCount();
                 } else {
                     console.log('User object incomplete, waiting for full load');
                 }
@@ -208,6 +209,10 @@ const AuthModule = {
             localStorage.removeItem('firebase_auth');
             sessionStorage.removeItem('firebase_auth');
 
+            // Clear cart from localStorage
+            localStorage.removeItem('cart');
+            App.updateCartCount();
+
             // Small delay to ensure Firebase state is updated
             setTimeout(() => {
                 console.log('Redirecting to /logout for PHP session cleanup');
@@ -216,6 +221,8 @@ const AuthModule = {
         }).catch((error) => {
             console.error('Firebase signOut error:', error);
             // Even if Firebase signOut fails, proceed to PHP logout
+            localStorage.removeItem('cart');
+            App.updateCartCount();
             setTimeout(() => {
                 window.location.href = '/logout';
             }, 500);

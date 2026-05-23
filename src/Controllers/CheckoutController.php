@@ -24,6 +24,7 @@ class CheckoutController
             'isTestMode' => $isTestMode,
             'email' => $email,
             'title' => $title,
+            'isLoggedIn' => Auth::isLoggedIn(),
         ]);
     }
 
@@ -45,7 +46,12 @@ class CheckoutController
                 return;
             }
 
-            $userId = Auth::getCurrentUserId() ?? 'guest_' . uniqid();
+            $userId = Auth::getCurrentUserId();
+            if (!$userId) {
+                http_response_code(401);
+                echo json_encode(['success' => false, 'error' => 'Login required']);
+                return;
+            }
 
             // Create order
             $orderData = [

@@ -1,3 +1,10 @@
+<?php
+if (!$isLoggedIn) {
+    header('Location: /login?redirect=/checkout');
+    exit;
+}
+?>
+
 <section class="py-12">
     <div class="container mx-auto px-4 max-w-2xl">
         <h1 class="text-4xl font-bold mb-8"><?= htmlspecialchars($pageTitle) ?></h1>

@@ -158,8 +158,16 @@ const StripeModule = {
                 paymentIntentId: paymentIntentId
             })
         })
-        .then(res => res.json())
+        .then(res => {
+            if (res.status === 401) {
+                App.showNotification('Bitte melde dich an, um fortzufahren', 'warning');
+                window.location.href = '/login?redirect=/checkout';
+                return null;
+            }
+            return res.json();
+        })
         .then(data => {
+            if (!data) return;
             if (data.success) {
                 localStorage.removeItem('cart');
                 App.updateCartCount();
@@ -184,8 +192,16 @@ const StripeModule = {
                 testMode: true
             })
         })
-        .then(res => res.json())
+        .then(res => {
+            if (res.status === 401) {
+                App.showNotification('Bitte melde dich an, um fortzufahren', 'warning');
+                window.location.href = '/login?redirect=/checkout';
+                return null;
+            }
+            return res.json();
+        })
         .then(data => {
+            if (!data) return;
             if (data.success) {
                 localStorage.removeItem('cart');
                 App.updateCartCount();

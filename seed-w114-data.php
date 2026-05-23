@@ -11,6 +11,8 @@ require_once __DIR__ . '/src/FirestoreRest.php';
 use App\Config;
 use App\FirestoreRest;
 
+Config::load();
+
 // News Articles (10)
 $newsArticles = [
     [

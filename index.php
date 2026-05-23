@@ -58,6 +58,9 @@ $router->post('/api/cart/add', 'CartController@add');
 $router->post('/api/cart/remove', 'CartController@remove');
 $router->post('/api/cart/update', 'CartController@update');
 
+// Search
+$router->get('/api/search', 'SearchController@search');
+
 // Checkout
 $router->get('/checkout', 'CheckoutController@index');
 $router->post('/checkout/process', 'CheckoutController@process');

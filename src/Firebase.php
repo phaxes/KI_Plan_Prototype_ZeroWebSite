@@ -687,5 +687,105 @@ class Firebase
             return null;
         }
     }
+
+    public static function searchPosts(string $keyword, int $limit = 6): array
+    {
+        if (!self::isAvailable()) return [];
+
+        try {
+            $result = self::apiCall('GET', '/posts');
+            if (!$result || !isset($result['documents'])) return [];
+
+            $needle  = strtolower($keyword);
+            $rawHits = [];
+
+            foreach ($result['documents'] as $doc) {
+                $data = self::documentToArray($doc);
+                if (!$data) continue;
+                if (!($data['published'] ?? false)) continue;
+                $type = $data['type'] ?? '';
+                if ($type !== 'blog' && $type !== 'news') continue;
+
+                $tags = is_array($data['tags'] ?? null) ? implode(' ', $data['tags']) : '';
+                $haystack = strtolower(($data['title'] ?? '') . ' ' . ($data['content'] ?? '') . ' ' . $tags);
+
+                if (stripos($haystack, $needle) === false) continue;
+
+                $rawHits[] = $data;
+            }
+
+            usort($rawHits, function ($a, $b) {
+                $tA = ($a['createdAt'] instanceof \DateTime) ? $a['createdAt']->getTimestamp() : 0;
+                $tB = ($b['createdAt'] instanceof \DateTime) ? $b['createdAt']->getTimestamp() : 0;
+                return $tB <=> $tA;
+            });
+
+            $shaped = [];
+            foreach (array_slice($rawHits, 0, $limit) as $data) {
+                $plain   = strip_tags($data['content'] ?? '');
+                $excerpt = mb_strlen($plain) > 120 ? mb_substr($plain, 0, 120) . '…' : $plain;
+                $type    = $data['type'];
+                $shaped[] = [
+                    'id'       => $data['id'],
+                    'title'    => $data['title']   ?? '',
+                    'type'     => $type,
+                    'excerpt'  => $excerpt,
+                    'imageUrl' => $data['imageUrl'] ?? '',
+                    'url'      => '/' . $type . '/' . $data['id'],
+                ];
+            }
+
+            return $shaped;
+
+        } catch (\Exception $e) {
+            error_log('searchPosts: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    public static function searchProducts(string $keyword, int $limit = 6): array
+    {
+        if (!self::isAvailable()) return [];
+
+        try {
+            $result = self::apiCall('GET', '/products');
+            if (!$result || !isset($result['documents'])) return [];
+
+            $needle  = strtolower($keyword);
+            $matches = [];
+
+            foreach ($result['documents'] as $doc) {
+                $data = self::documentToArray($doc);
+                if (!$data) continue;
+                if (!($data['active'] ?? false)) continue;
+
+                $haystack = strtolower(
+                    ($data['name']        ?? '') . ' ' .
+                    ($data['description'] ?? '') . ' ' .
+                    ($data['category']    ?? '')
+                );
+
+                if (stripos($haystack, $needle) === false) continue;
+
+                $desc    = $data['description'] ?? '';
+                $excerpt = mb_strlen($desc) > 100 ? mb_substr($desc, 0, 100) . '…' : $desc;
+
+                $matches[] = [
+                    'id'          => $data['id'],
+                    'name'        => $data['name'] ?? '',
+                    'description' => $excerpt,
+                    'price'       => floatval($data['price'] ?? 0),
+                    'imageUrl'    => $data['imageUrl'] ?? $data['image'] ?? '',
+                    'url'         => '/shop/' . $data['id'],
+                ];
+            }
+
+            return array_slice($matches, 0, $limit);
+
+        } catch (\Exception $e) {
+            error_log('searchProducts: ' . $e->getMessage());
+            return [];
+        }
+    }
 }
 ?>

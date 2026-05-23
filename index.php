@@ -63,6 +63,9 @@ $router->get('/checkout', 'CheckoutController@index');
 $router->post('/checkout/process', 'CheckoutController@process');
 $router->get('/checkout/success', 'CheckoutController@success');
 
+// Webhooks
+$router->post('/api/webhook/stripe', 'WebhookController@handle');
+
 // Auth
 $router->get('/login', 'AuthController@login');
 $router->get('/register', 'AuthController@register');

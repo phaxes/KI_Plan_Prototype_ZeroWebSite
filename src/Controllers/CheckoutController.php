@@ -35,6 +35,8 @@ class CheckoutController
             $input = json_decode(file_get_contents('php://input'), true);
             $items = $input['items'] ?? [];
             $total = floatval($input['total'] ?? 0);
+            $email = $input['email'] ?? '';
+            $paymentIntentId = $input['paymentIntentId'] ?? '';
             $testMode = $input['testMode'] ?? false;
 
             if (empty($items) || $total <= 0) {
@@ -50,6 +52,8 @@ class CheckoutController
                 'userId' => $userId,
                 'items' => $items,
                 'total' => $total,
+                'email' => $email,
+                'paymentIntentId' => $paymentIntentId,
                 'status' => $testMode ? 'test' : 'pending',
                 'createdAt' => new \DateTime()
             ];
@@ -81,8 +85,15 @@ class CheckoutController
         $orderId = $_GET['orderId'] ?? 'ORDER_' . uniqid();
         $isLoggedIn = Auth::isLoggedIn();
 
+        // Try to load order details from Firestore
+        $order = Firebase::getOrderById($orderId);
+        $orderTotal = $order['total'] ?? null;
+        $orderEmail = $order['email'] ?? '';
+
         echo View::render('checkout/success', [
             'orderId' => $orderId,
+            'orderTotal' => $orderTotal,
+            'orderEmail' => $orderEmail,
             'isLoggedIn' => $isLoggedIn,
             'title' => $title,
         ]);

@@ -612,5 +612,54 @@ class Firebase
             return [];
         }
     }
+
+    public static function getOrderByPaymentIntentId($paymentIntentId)
+    {
+        if (!self::isAvailable()) return null;
+
+        try {
+            $result = self::apiCall('GET', '/orders');
+            if (!$result || !isset($result['documents'])) {
+                return null;
+            }
+
+            foreach ($result['documents'] as $doc) {
+                $data = self::documentToArray($doc);
+                if ($data === null) continue;
+
+                if (($data['paymentIntentId'] ?? null) === $paymentIntentId) {
+                    return $data;
+                }
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            error_log('getOrderByPaymentIntentId: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    public static function updateOrder($orderId, $data)
+    {
+        if (!self::isAvailable()) return false;
+
+        try {
+            $updateData = ['updatedAt' => new \DateTime()];
+
+            foreach (['status', 'email', 'paymentIntentId', 'shippingAddress', 'billingAddress', 'paymentMethod', 'notes'] as $key) {
+                if (isset($data[$key])) {
+                    $updateData[$key] = $data[$key];
+                }
+            }
+
+            $documentData = self::arrayToDocument($updateData);
+            self::apiCall('PATCH', '/orders/' . $orderId, ['fields' => $documentData]);
+
+            return true;
+        } catch (\Exception $e) {
+            error_log('updateOrder: ' . $e->getMessage());
+            return false;
+        }
+    }
 }
 ?>

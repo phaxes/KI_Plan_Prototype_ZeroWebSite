@@ -3,9 +3,27 @@ const StripeModule = {
     stripe: null,
     elements: null,
     cardElement: null,
+    isTestMode: false,
 
     init: function() {
-        const publishableKey = document.body.dataset.stripeKey;
+        // Fix: read from [data-stripe-key] element, not body
+        const configElement = document.querySelector('[data-stripe-key]');
+        if (!configElement) {
+            console.warn('Stripe configuration element not found');
+            return;
+        }
+
+        const publishableKey = configElement.dataset.stripeKey;
+        this.isTestMode = configElement.dataset.stripeTestMode === 'true' || !publishableKey?.startsWith('pk_live');
+
+        // In test mode, we don't need Stripe.js at all
+        if (this.isTestMode) {
+            this.setupCheckoutForm();
+            this.setupTestModeUI();
+            return;
+        }
+
+        // In live mode, initialize Stripe
         if (!publishableKey) {
             console.warn('Stripe publishable key not found');
             return;
@@ -15,6 +33,23 @@ const StripeModule = {
         this.elements = this.stripe.elements();
         this.setupCardElement();
         this.setupCheckoutForm();
+    },
+
+    setupTestModeUI: function() {
+        const cardElement = document.getElementById('card-element');
+        if (cardElement) {
+            cardElement.innerHTML = '<div class="bg-blue-50 p-4 rounded border border-blue-200"><p class="text-sm text-blue-800"><strong>Test-Modus aktiviert:</strong> Kreditkarte nicht erforderlich. Klicke "Bestellung aufgeben" um die Bestellung zu simulieren.</p></div>';
+            cardElement.style.minHeight = 'auto';
+        }
+
+        // Hide the Kartendaten label
+        const labels = document.querySelectorAll('label');
+        for (const label of labels) {
+            if (label.textContent.includes('Kartendaten')) {
+                label.style.display = 'none';
+                break;
+            }
+        }
     },
 
     setupCardElement: function() {
@@ -58,13 +93,13 @@ const StripeModule = {
         const cartTotal = this.getCartTotal();
 
         if (!email || cartTotal === 0) {
-            App.showNotification('Bitte alle Felder ausfüllen', 'error');
+            App.showNotification('Bitte E-Mail ausfüllen', 'error');
             return;
         }
 
-        // In test mode, just simulate success
-        if (this.isTestMode()) {
-            this.simulateCheckout(cartTotal);
+        // In test mode, simulate checkout
+        if (this.isTestMode) {
+            this.simulateCheckout(email, cartTotal);
             return;
         }
 
@@ -104,12 +139,12 @@ const StripeModule = {
                 App.showNotification(result.error.message, 'error');
             } else {
                 // Payment successful
-                this.processOrder(result.paymentIntent.id);
+                this.processOrder(email, result.paymentIntent.id);
             }
         });
     },
 
-    processOrder: function(paymentIntentId) {
+    processOrder: function(email, paymentIntentId) {
         const cart = JSON.parse(localStorage.getItem('cart')) || [];
         const total = this.getCartTotal();
 
@@ -119,6 +154,7 @@ const StripeModule = {
             body: JSON.stringify({
                 items: cart,
                 total: total,
+                email: email,
                 paymentIntentId: paymentIntentId
             })
         })
@@ -134,7 +170,7 @@ const StripeModule = {
         });
     },
 
-    simulateCheckout: function(total) {
+    simulateCheckout: function(email, total) {
         // Test mode: simulate checkout
         const cart = JSON.parse(localStorage.getItem('cart')) || [];
 
@@ -144,6 +180,7 @@ const StripeModule = {
             body: JSON.stringify({
                 items: cart,
                 total: total,
+                email: email,
                 testMode: true
             })
         })
@@ -164,13 +201,6 @@ const StripeModule = {
     getCartTotal: function() {
         const cart = JSON.parse(localStorage.getItem('cart')) || [];
         return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    },
-
-    isTestMode: function() {
-        // Check if Stripe key indicates test mode
-        const body = document.body;
-        return body.dataset.stripeTestMode === 'true' ||
-               !document.body.dataset.stripeKey?.startsWith('pk_live');
     }
 };
 

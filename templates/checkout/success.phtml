@@ -8,9 +8,17 @@
             <div class="bg-white p-6 rounded my-6">
                 <p class="text-gray-600 text-sm">Bestellnummer:</p>
                 <p class="text-2xl font-bold font-mono"><?= htmlspecialchars($orderId) ?></p>
+                <?php if (!empty($orderTotal)): ?>
+                    <p class="text-gray-600 text-sm mt-4">Gesamtbetrag:</p>
+                    <p class="text-lg font-semibold"><?= number_format($orderTotal, 2, ',', '.') ?> €</p>
+                <?php endif; ?>
+                <?php if (!empty($orderEmail)): ?>
+                    <p class="text-gray-600 text-sm mt-4">Bestellbestätigung:</p>
+                    <p class="text-sm font-mono"><?= htmlspecialchars($orderEmail) ?></p>
+                <?php endif; ?>
             </div>
 
-            <p class="text-gray-600 mb-4">Eine Bestätigung wurde an deine E-Mail gesendet.</p>
+            <p class="text-gray-600 mb-4">Deine Bestellnummer zur späteren Referenz notieren.</p>
 
             <div class="flex gap-4 justify-center flex-wrap">
                 <a href="/shop" class="bg-primary text-white px-6 py-3 rounded hover:bg-blue-600 transition">Weitershoppen</a>

@@ -5,6 +5,7 @@
  * Theme: Mercedes-Benz W114 "Strich Acht" 1971 US Model
  */
 
+require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/src/Config.php';
 require_once __DIR__ . '/src/FirestoreRest.php';
 

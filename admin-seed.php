@@ -4,6 +4,7 @@
  * Access: https://zero-cost-website.onrender.com/admin-seed.php?key=W114_SEED_2024_RENDER
  */
 
+require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/src/Config.php';
 require_once __DIR__ . '/src/FirestoreRest.php';
 

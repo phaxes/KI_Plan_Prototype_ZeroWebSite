@@ -115,22 +115,29 @@ class ProfileController
             header('Location: /login');
             exit;
         }
+
+        // Try to load from session first (for immediate updates after save)
         $preferences = [];
+        if (isset($_SESSION['newsletterSubscribed'])) {
+            $preferences['subscribed'] = $_SESSION['newsletterSubscribed'];
+            $preferences['categories'] = $_SESSION['newsletterCategories'] ?? [];
+        } else {
+            // Fall back to Firestore if not in session
+            try {
+                $projectId = Config::get('FIREBASE_PROJECT_ID');
+                $serviceAccountJson = Config::get('FIREBASE_SERVICE_ACCOUNT_JSON');
 
-        try {
-            $projectId = Config::get('FIREBASE_PROJECT_ID');
-            $serviceAccountJson = Config::get('FIREBASE_SERVICE_ACCOUNT_JSON');
+                if ($projectId && $serviceAccountJson) {
+                    if (file_exists($serviceAccountJson)) {
+                        $serviceAccountJson = file_get_contents($serviceAccountJson);
+                    }
 
-            if ($projectId && $serviceAccountJson) {
-                if (file_exists($serviceAccountJson)) {
-                    $serviceAccountJson = file_get_contents($serviceAccountJson);
+                    $restClient = FirestoreRest::getInstance($projectId, $serviceAccountJson);
+                    $preferences = $restClient->getDocument('userNewsletterPreferences', $userId) ?? [];
                 }
-
-                $restClient = FirestoreRest::getInstance($projectId, $serviceAccountJson);
-                $preferences = $restClient->getDocument('userNewsletterPreferences', $userId) ?? [];
+            } catch (\Exception $e) {
+                error_log('Newsletter form: ' . $e->getMessage());
             }
-        } catch (\Exception $e) {
-            error_log('Newsletter form: ' . $e->getMessage());
         }
 
         $title = 'Newsletter-Einstellungen';
@@ -177,6 +184,10 @@ class ProfileController
                     'categories' => $categories,
                     'updatedAt' => new \DateTime()
                 ]);
+
+                // Save preferences to session for immediate use
+                $_SESSION['newsletterSubscribed'] = $subscribed;
+                $_SESSION['newsletterCategories'] = $categories;
 
                 echo json_encode([
                     'success' => true,

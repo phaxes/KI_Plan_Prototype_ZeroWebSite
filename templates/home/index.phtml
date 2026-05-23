@@ -215,12 +215,17 @@
             Erhalte die neuesten Updates direkt in dein Postfach
         </p>
 
-        <form id="newsletter-form" class="flex gap-0 reveal reveal-delay-2">
-            <input type="email" id="newsletter-email" required placeholder="deine@email.de" class="flex-1 bg-transparent border-b-2 border-paper text-paper placeholder-muted px-4 py-3 focus:outline-none focus:border-primary transition font-mono">
-            <button type="submit" class="border-2 border-primary bg-primary text-void px-8 py-3 font-mono text-xs uppercase tracking-widest font-black hover:bg-transparent hover:text-primary transition">
-                Abonnieren
-            </button>
-        </form>
+        <div class="flex flex-col gap-6 reveal reveal-delay-2">
+            <form id="newsletter-form" class="flex gap-0">
+                <input type="email" id="newsletter-email" required placeholder="deine@email.de" class="flex-1 bg-transparent border-b-2 border-paper text-paper placeholder-muted px-4 py-3 focus:outline-none focus:border-primary transition font-mono">
+                <button type="submit" class="border-2 border-primary bg-primary text-void px-8 py-3 font-mono text-xs uppercase tracking-widest font-black hover:bg-transparent hover:text-primary transition">
+                    Abonnieren
+                </button>
+            </form>
+            <a href="/newsletter" class="text-center border-2 border-paper text-paper px-6 py-3 font-mono text-xs uppercase tracking-widest font-black hover:border-primary hover:text-primary transition">
+                Mehr Infos & Einstellungen
+            </a>
+        </div>
     </div>
 </section>
 

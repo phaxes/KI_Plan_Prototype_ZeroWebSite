@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\View;
+use App\Firebase;
 
 class CartController
 {
@@ -47,5 +48,23 @@ class CartController
     {
         header('Content-Type: application/json');
         echo json_encode(['success' => true]);
+    }
+
+    public function stock($params = [], $post = [], $get = [])
+    {
+        header('Content-Type: application/json');
+        $productId = $params['id'] ?? null;
+        if (!$productId) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Missing product id']);
+            return;
+        }
+        $product = Firebase::getProductById($productId);
+        if (!$product) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Not found']);
+            return;
+        }
+        echo json_encode(['stock' => (int)($product['stock'] ?? 0)]);
     }
 }

@@ -437,8 +437,11 @@ class Auth
     public static function setupSession($uid, $email, $displayName)
     {
         try {
-            // Regenerate session ID after login to prevent session fixation attacks
-            session_regenerate_id(true);
+            // Regenerate session ID only on first login (prevent session fixation, avoid race conditions on re-verify)
+            $isNewLogin = !isset($_SESSION['userId']) || $_SESSION['userId'] !== $uid;
+            if ($isNewLogin) {
+                session_regenerate_id(true);
+            }
 
             // Verify user exists or create
             self::createOrUpdateUser($uid, $email, $displayName);
@@ -452,18 +455,19 @@ class Auth
             $_SESSION['displayName'] = $displayName;
             $_SESSION['isAdmin'] = $isAdmin;
             $_SESSION['loginTime'] = time();
+            $_SESSION['_session_regenerated'] = true;  // Prevent index.php from regenerating again
 
             return true;
         } catch (\Throwable $e) {
             error_log('Session setup error: ' . $e->getMessage());
             // Continue even if Firestore fails - just no admin status
-            // Still regenerate session ID even if Firestore fails
-            session_regenerate_id(true);
+            // Do NOT regenerate again - only regenerate on first login in try block
             $_SESSION['userId'] = $uid;
             $_SESSION['email'] = $email;
             $_SESSION['displayName'] = $displayName;
             $_SESSION['isAdmin'] = false;
             $_SESSION['loginTime'] = time();
+            $_SESSION['_session_regenerated'] = true;  // Prevent index.php from regenerating again
             return true;
         }
     }

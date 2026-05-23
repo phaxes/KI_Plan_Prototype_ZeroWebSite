@@ -21,36 +21,6 @@ try {
     console.error('Firebase initialization error:', error);
 }
 
-// Check auth state and sync with server
-auth.onAuthStateChanged((user) => {
-    if (user) {
-        console.log('User logged in:', user.email);
-        // Send token to backend for session verification
-        user.getIdToken(true).then(token => {
-            fetch('/auth/verify', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    idToken: token,
-                    uid: user.uid,
-                    email: user.email,
-                    displayName: user.displayName || ''
-                })
-            })
-            .then(res => {
-                if (res.ok) {
-                    console.log('Session verified on server');
-                }
-            })
-            .catch(err => console.error('Auth verification failed:', err));
-        });
-    } else {
-        console.log('User not logged in');
-    }
-});
-
 // Firebase Firestore utility functions
 const FirebaseUtils = {
     getDocument: async (collection, docId) => {

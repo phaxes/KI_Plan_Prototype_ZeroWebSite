@@ -49,4 +49,55 @@ class Config
     {
         return self::$config;
     }
+
+    /**
+     * Get service account JSON from file or string configuration
+     * Handles multiple path resolution strategies for different environments
+     *
+     * @return string JSON string of service account, or throws on failure
+     */
+    public static function getServiceAccountJson(): string
+    {
+        $serviceAccountPath = self::get('FIREBASE_SERVICE_ACCOUNT_JSON');
+
+        if (!$serviceAccountPath) {
+            throw new \Exception('FIREBASE_SERVICE_ACCOUNT_JSON not configured');
+        }
+
+        // If it's already JSON (starts with {), return as-is
+        if (trim($serviceAccountPath)[0] === '{') {
+            return $serviceAccountPath;
+        }
+
+        // Try to load from file: absolute path first, then relative to project root
+        $paths = [
+            $serviceAccountPath,  // Try as given
+            dirname(__DIR__) . '/' . $serviceAccountPath,  // Relative to project root
+        ];
+
+        // Also try with getcwd() prefix in case working directory is different
+        if (!str_starts_with($serviceAccountPath, '/')) {
+            $paths[] = getcwd() . '/' . $serviceAccountPath;
+        }
+
+        foreach ($paths as $path) {
+            if (file_exists($path)) {
+                $content = file_get_contents($path);
+                if ($content === false) {
+                    continue;
+                }
+                return $content;
+            }
+        }
+
+        // If no file found, assume it's a base64-encoded or raw JSON string
+        // Try base64 decode
+        $decoded = base64_decode($serviceAccountPath, true);
+        if ($decoded !== false && trim($decoded)[0] === '{') {
+            return $decoded;
+        }
+
+        // Last resort: return as-is and let FirestoreRest handle validation
+        return $serviceAccountPath;
+    }
 }

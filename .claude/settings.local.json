@@ -18,7 +18,19 @@
       "WebSearch",
       "Bash(curl *)",
       "Bash(git push *)",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "Bash(chmod +x /tmp/test-cart-add.sh)",
+      "Bash(/tmp/test-cart-add.sh)",
+      "Read(//tmp/**)",
+      "Bash(pkill *)",
+      "Bash(killall php *)",
+      "Bash(tee /tmp/php_server.log)",
+      "Bash(chmod +x /tmp/test_endpoint.sh)",
+      "Bash(/tmp/test_endpoint.sh)",
+      "Bash(chmod +x /tmp/test_with_curl.sh)",
+      "Bash(timeout 10 /tmp/test_with_curl.sh)",
+      "Bash(python3 -m json.tool)",
+      "Bash(git reset *)"
     ]
   }
 }

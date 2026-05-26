@@ -59,30 +59,13 @@ class ProfileController
             // Update Firestore via REST API if configured
             try {
                 $projectId = Config::get('FIREBASE_PROJECT_ID');
-                $serviceAccountPath = Config::get('FIREBASE_SERVICE_ACCOUNT_JSON');
-
-                if ($projectId && $serviceAccountPath) {
-                    // Try to load service account JSON from file or use as-is if it's a JSON string
-                    $serviceAccountJson = null;
-                    if (file_exists($serviceAccountPath)) {
-                        $serviceAccountJson = file_get_contents($serviceAccountPath);
-                    } else {
-                        $projectRoot = dirname(__DIR__, 2);
-                        $resolvedPath = $projectRoot . '/' . $serviceAccountPath;
-                        if (file_exists($resolvedPath)) {
-                            $serviceAccountJson = file_get_contents($resolvedPath);
-                        } else {
-                            $serviceAccountJson = $serviceAccountPath;
-                        }
-                    }
-
-                    if ($serviceAccountJson) {
-                        $restClient = FirestoreRest::getInstance($projectId, $serviceAccountJson);
-                        $restClient->setDocument('users', $userId, [
-                            'displayName' => $displayName,
-                            'updatedAt' => new \DateTime()
-                        ]);
-                    }
+                if ($projectId) {
+                    $serviceAccountJson = Config::getServiceAccountJson();
+                    $restClient = FirestoreRest::getInstance($projectId, $serviceAccountJson);
+                    $restClient->setDocument('users', $userId, [
+                        'displayName' => $displayName,
+                        'updatedAt' => new \DateTime()
+                    ]);
                 }
             } catch (\Exception $e) {
                 error_log('Profile update: Firestore unavailable - ' . $e->getMessage());
@@ -137,27 +120,10 @@ class ProfileController
             // Fall back to Firestore if not in session
             try {
                 $projectId = Config::get('FIREBASE_PROJECT_ID');
-                $serviceAccountPath = Config::get('FIREBASE_SERVICE_ACCOUNT_JSON');
-
-                if ($projectId && $serviceAccountPath) {
-                    // Try to load service account JSON from file or use as-is
-                    $serviceAccountJson = null;
-                    if (file_exists($serviceAccountPath)) {
-                        $serviceAccountJson = file_get_contents($serviceAccountPath);
-                    } else {
-                        $projectRoot = dirname(__DIR__, 2);
-                        $resolvedPath = $projectRoot . '/' . $serviceAccountPath;
-                        if (file_exists($resolvedPath)) {
-                            $serviceAccountJson = file_get_contents($resolvedPath);
-                        } else {
-                            $serviceAccountJson = $serviceAccountPath;
-                        }
-                    }
-
-                    if ($serviceAccountJson) {
-                        $restClient = FirestoreRest::getInstance($projectId, $serviceAccountJson);
-                        $preferences = $restClient->getDocument('userNewsletterPreferences', $userId) ?? [];
-                    }
+                if ($projectId) {
+                    $serviceAccountJson = Config::getServiceAccountJson();
+                    $restClient = FirestoreRest::getInstance($projectId, $serviceAccountJson);
+                    $preferences = $restClient->getDocument('userNewsletterPreferences', $userId) ?? [];
                 }
             } catch (\Exception $e) {
                 error_log('Newsletter form: ' . $e->getMessage());
@@ -203,44 +169,15 @@ class ProfileController
             error_log('Newsletter preference update: userId=' . $userId . ', subscribed=' . ($subscribed ? 'true' : 'false') . ', categories=' . json_encode($categories));
 
             $projectId = Config::get('FIREBASE_PROJECT_ID');
-            $serviceAccountPath = Config::get('FIREBASE_SERVICE_ACCOUNT_JSON');
 
-            if (!$projectId || !$serviceAccountPath) {
+            if (!$projectId) {
                 http_response_code(500);
                 echo json_encode(['error' => 'Firestore not configured']);
                 return;
             }
 
-            // Try to load service account JSON from multiple sources
-            $serviceAccountJson = null;
-
-            // 1. Try absolute path
-            if (file_exists($serviceAccountPath)) {
-                error_log('Newsletter: Loading service account from absolute path: ' . $serviceAccountPath);
-                $serviceAccountJson = file_get_contents($serviceAccountPath);
-                if ($serviceAccountJson === false) {
-                    throw new \Exception('Failed to read service account file: ' . $serviceAccountPath);
-                }
-            } else {
-                // 2. Try relative to project root
-                $projectRoot = dirname(__DIR__, 2);
-                $resolvedPath = $projectRoot . '/' . $serviceAccountPath;
-                if (file_exists($resolvedPath)) {
-                    error_log('Newsletter: Loading service account from resolved path: ' . $resolvedPath);
-                    $serviceAccountJson = file_get_contents($resolvedPath);
-                    if ($serviceAccountJson === false) {
-                        throw new \Exception('Failed to read service account file: ' . $resolvedPath);
-                    }
-                } else {
-                    // 3. Try as base64-encoded or raw JSON string
-                    error_log('Newsletter: Service account file not found at ' . $serviceAccountPath . ' or ' . $resolvedPath . ', treating as JSON string');
-                    $serviceAccountJson = $serviceAccountPath;
-                }
-            }
-
-            error_log('Newsletter: Initializing FirestoreRest client...');
+            $serviceAccountJson = Config::getServiceAccountJson();
             $restClient = FirestoreRest::getInstance($projectId, $serviceAccountJson);
-            error_log('Newsletter: FirestoreRest client initialized, calling setDocument...');
 
             $success = $restClient->setDocument('userNewsletterPreferences', $userId, [
                 'subscribed' => $subscribed,
@@ -248,10 +185,7 @@ class ProfileController
                 'updatedAt' => new \DateTime()
             ]);
 
-            error_log('Newsletter: setDocument returned: ' . ($success ? 'true' : 'false'));
-
             if (!$success) {
-                error_log('Newsletter: setDocument failed, returning error response');
                 http_response_code(500);
                 echo json_encode(['error' => 'Failed to save preferences to database']);
                 return;

@@ -34,9 +34,9 @@
             <!-- Newsletter -->
             <div>
                 <h4 class="font-mono text-xs uppercase tracking-widest text-primary mb-4">Newsletter</h4>
-                <form id="newsletter-form" class="flex flex-col gap-4">
-                    <input type="email" name="email" placeholder="E-Mail" class="bg-transparent border-b-2 border-paper text-paper placeholder-muted px-0 py-2 focus:outline-none focus:border-primary transition" required>
-                    <input type="text" name="name" placeholder="Name" class="bg-transparent border-b-2 border-paper text-paper placeholder-muted px-0 py-2 focus:outline-none focus:border-primary transition">
+                <form id="footer-newsletter-form" class="flex flex-col gap-4">
+                    <input type="email" id="footer-newsletter-email" placeholder="E-Mail" class="bg-transparent border-b-2 border-paper text-paper placeholder-muted px-0 py-2 focus:outline-none focus:border-primary transition" required>
+                    <input type="text" id="footer-newsletter-name" placeholder="Name" class="bg-transparent border-b-2 border-paper text-paper placeholder-muted px-0 py-2 focus:outline-none focus:border-primary transition">
                     <button type="submit" class="border-2 border-paper text-paper hover:border-primary hover:text-primary px-4 py-2 font-mono text-xs uppercase tracking-widest transition mt-2">Abonnieren</button>
                 </form>
             </div>
@@ -48,22 +48,37 @@
     </div>
 
     <script>
-        document.getElementById('newsletter-form')?.addEventListener('submit', async (e) => {
+        document.getElementById('footer-newsletter-form')?.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const formData = new FormData(e.target);
+            const email = document.getElementById('footer-newsletter-email').value.trim();
+            const name = document.getElementById('footer-newsletter-name').value.trim();
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Wird abgesendet...';
+
             try {
                 const response = await fetch('/api/newsletter/subscribe', {
                     method: 'POST',
-                    body: formData
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, name })
                 });
-                if (response.ok) {
+                const data = await response.json();
+
+                if (data.success) {
                     alert('Erfolgreich abonniert!');
                     e.target.reset();
                 } else {
-                    alert('Fehler beim Abonnieren. Bitte versuche es später erneut.');
+                    alert(data.error || 'Fehler beim Abonnieren. Bitte versuche es später erneut.');
                 }
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
             } catch (err) {
                 console.error('Newsletter subscription error:', err);
+                alert('Verbindungsfehler – bitte versuche es später erneut');
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
             }
         });
     </script>

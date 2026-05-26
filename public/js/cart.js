@@ -35,6 +35,9 @@ const CartModule = {
         cart = cart.filter(item => item.id !== productId);
         this.saveCart(cart);
         this.updateCartCount();
+        if (typeof renderCart === 'function') {
+            renderCart();
+        }
     },
 
     updateQuantity: function(productId, quantity) {
@@ -47,6 +50,9 @@ const CartModule = {
                 item.quantity = quantity;
                 this.saveCart(cart);
                 this.updateCartCount();
+                if (typeof renderCart === 'function') {
+                    renderCart();
+                }
             }
         }
     },

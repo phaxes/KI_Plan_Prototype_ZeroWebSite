@@ -201,12 +201,12 @@ class ProfileController
             ]);
 
         } catch (\Exception $e) {
-            error_log('Newsletter preference update error: ' . $e->getMessage());
+            error_log('Newsletter preference update error: ' . get_class($e) . ' - ' . $e->getMessage());
             error_log('Stack trace: ' . $e->getTraceAsString());
             http_response_code(500);
             echo json_encode([
                 'error' => 'Failed to update preferences',
-                'details' => $e->getMessage(),
+                'details' => !empty($e->getMessage()) ? $e->getMessage() : 'Unknown error (no message provided)',
                 'code' => $e->getCode()
             ]);
         }

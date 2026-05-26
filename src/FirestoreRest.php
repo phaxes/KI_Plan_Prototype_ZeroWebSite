@@ -29,8 +29,11 @@ class FirestoreRest
         $serviceAccount = json_decode($serviceAccountJson, true);
 
         if (!$serviceAccount || !isset($serviceAccount['private_key'], $serviceAccount['client_email'])) {
+            error_log('FirestoreRest: Invalid service account - missing private_key or client_email');
             throw new \Exception('Invalid service account configuration');
         }
+
+        error_log('FirestoreRest: Refreshing access token for ' . $serviceAccount['client_email']);
 
         // Create JWT
         $header = base64_encode(json_encode(['alg' => 'RS256', 'typ' => 'JWT']));
@@ -44,9 +47,14 @@ class FirestoreRest
         ]));
 
         $signature = '';
-        openssl_sign("$header.$payload", $signature, $serviceAccount['private_key'], 'SHA256');
-        $signature = base64_encode($signature);
+        $signSuccess = openssl_sign("$header.$payload", $signature, $serviceAccount['private_key'], 'SHA256');
 
+        if (!$signSuccess) {
+            error_log('FirestoreRest: Failed to sign JWT');
+            throw new \Exception('Failed to sign JWT');
+        }
+
+        $signature = base64_encode($signature);
         $jwt = "$header.$payload.$signature";
 
         // Exchange JWT for access token
@@ -63,13 +71,17 @@ class FirestoreRest
             $this->tokenExpiry = $now + ($data['expires_in'] ?? 3600) - 300;
 
             if (!$this->accessToken) {
-                throw new \Exception('Failed to get access token');
+                error_log('FirestoreRest: No access token in response: ' . json_encode($data));
+                throw new \Exception('Failed to get access token from Google');
             }
 
-            error_log('FirestoreRest: Access token obtained');
+            error_log('FirestoreRest: Access token obtained successfully, expires at ' . $this->tokenExpiry);
         } catch (RequestException $e) {
-            error_log('FirestoreRest: Token exchange failed: ' . $e->getMessage());
-            throw new \Exception('Failed to authenticate with Firebase');
+            $statusCode = $e->getResponse()?->getStatusCode() ?? 'unknown';
+            $errorBody = $e->getResponse()?->getBody() ?? 'no body';
+            error_log('FirestoreRest: Token exchange failed (HTTP ' . $statusCode . '): ' . $e->getMessage());
+            error_log('FirestoreRest: Google error: ' . (string)$errorBody);
+            throw new \Exception('Failed to authenticate with Firebase: ' . $e->getMessage());
         }
     }
 
@@ -122,7 +134,18 @@ class FirestoreRest
                 'fields' => $this->encodeFieldsMap($data),
             ];
 
-            $response = $this->client->patch($url, [
+            // Build updateMask with all field names
+            $fieldNames = array_keys($data);
+            $updateMaskPaths = array_map(fn($f) => 'fields.' . $f, $fieldNames);
+
+            error_log('FirestoreRest: Setting document at ' . $url);
+            error_log('FirestoreRest: Fields to update: ' . json_encode($fieldNames));
+            error_log('FirestoreRest: Encoded data: ' . json_encode($encodedData));
+
+            // Add updateMask parameter
+            $urlWithMask = $url . '?updateMask.fieldPaths=' . implode('&updateMask.fieldPaths=', array_map('urlencode', $updateMaskPaths));
+
+            $response = $this->client->patch($urlWithMask, [
                 'headers' => [
                     'Authorization' => "Bearer {$this->accessToken}",
                     'Content-Type' => 'application/json',
@@ -130,10 +153,20 @@ class FirestoreRest
                 'json' => $encodedData,
             ]);
 
-            error_log('FirestoreRest: Document set successfully');
+            $statusCode = $response->getStatusCode();
+            $responseBody = json_decode((string)$response->getBody(), true);
+            error_log('FirestoreRest: Document set successfully (HTTP ' . $statusCode . ')');
+            error_log('FirestoreRest: Response: ' . json_encode($responseBody));
             return true;
         } catch (RequestException $e) {
-            error_log('FirestoreRest: Set document failed: ' . $e->getMessage());
+            $statusCode = $e->getResponse()?->getStatusCode() ?? 'unknown';
+            $errorBody = $e->getResponse()?->getBody() ?? 'no body';
+            error_log('FirestoreRest: Set document failed (HTTP ' . $statusCode . '): ' . $e->getMessage());
+            error_log('FirestoreRest: Response body: ' . (string)$errorBody);
+            return false;
+        } catch (\Exception $e) {
+            error_log('FirestoreRest: Unexpected error setting document: ' . $e->getMessage());
+            error_log('FirestoreRest: Stack trace: ' . $e->getTraceAsString());
             return false;
         }
     }

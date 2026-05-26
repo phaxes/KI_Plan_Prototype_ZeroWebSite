@@ -24,6 +24,9 @@ function addToCart(productId, productName, price, imageUrl, maxStock) {
 
     localStorage.setItem('cart', JSON.stringify(cart));
     App.updateCartCount();
+    if (typeof renderCart === 'function') {
+        renderCart();
+    }
     App.showNotification(`${productName} wurde zum Warenkorb hinzugefügt!`, 'success');
     document.getElementById('quantity').value = 1;
 }

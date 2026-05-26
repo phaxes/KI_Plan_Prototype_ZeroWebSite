@@ -24,6 +24,9 @@ const CartModule = {
 
         this.saveCart(cart);
         this.updateCartCount();
+        if (typeof renderCart === 'function') {
+            renderCart();
+        }
         App.showNotification(product.name + ' zum Warenkorb hinzugefügt', 'success');
     },
 

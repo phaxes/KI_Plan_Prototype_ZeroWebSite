@@ -108,3 +108,9 @@ if (document.readyState === 'loading') {
 } else {
     renderCart();
 }
+
+window.addEventListener('storage', (e) => {
+    if (e.key === 'cart' || e.key === null) {
+        renderCart();
+    }
+});

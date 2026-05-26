@@ -65,7 +65,8 @@ class Config
         }
 
         // If it's already JSON (starts with {), return as-is
-        if (trim($serviceAccountPath)[0] === '{') {
+        $trimmed = trim($serviceAccountPath);
+        if (strlen($trimmed) > 0 && $trimmed[0] === '{') {
             return $serviceAccountPath;
         }
 
@@ -93,8 +94,11 @@ class Config
         // If no file found, assume it's a base64-encoded or raw JSON string
         // Try base64 decode
         $decoded = base64_decode($serviceAccountPath, true);
-        if ($decoded !== false && trim($decoded)[0] === '{') {
-            return $decoded;
+        if ($decoded !== false) {
+            $decodedTrimmed = trim($decoded);
+            if (strlen($decodedTrimmed) > 0 && $decodedTrimmed[0] === '{') {
+                return $decoded;
+            }
         }
 
         // Last resort: return as-is and let FirestoreRest handle validation

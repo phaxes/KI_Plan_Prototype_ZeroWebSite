@@ -167,36 +167,51 @@ class ProfileController
             $rawInput = file_get_contents('php://input');
             $input = json_decode($rawInput, true) ?? [];
 
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Invalid JSON input']);
+                return;
+            }
+
             $subscribed = (bool) ($input['subscribed'] ?? false);
             $categories = (array) ($input['categories'] ?? []);
+
+            error_log('Newsletter preference update: userId=' . $userId . ', subscribed=' . ($subscribed ? 'true' : 'false') . ', categories=' . json_encode($categories));
 
             $projectId = Config::get('FIREBASE_PROJECT_ID');
             $serviceAccountJson = Config::get('FIREBASE_SERVICE_ACCOUNT_JSON');
 
-            if ($projectId && $serviceAccountJson) {
-                if (file_exists($serviceAccountJson)) {
-                    $serviceAccountJson = file_get_contents($serviceAccountJson);
-                }
-
-                $restClient = FirestoreRest::getInstance($projectId, $serviceAccountJson);
-                $restClient->setDocument('userNewsletterPreferences', $userId, [
-                    'subscribed' => $subscribed,
-                    'categories' => $categories,
-                    'updatedAt' => new \DateTime()
-                ]);
-
-                // Save preferences to session for immediate use
-                $_SESSION['newsletterSubscribed'] = $subscribed;
-                $_SESSION['newsletterCategories'] = $categories;
-
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Newsletter preferences updated'
-                ]);
-            } else {
+            if (!$projectId || !$serviceAccountJson) {
                 http_response_code(500);
                 echo json_encode(['error' => 'Firestore not configured']);
+                return;
             }
+
+            if (file_exists($serviceAccountJson)) {
+                $serviceAccountJson = file_get_contents($serviceAccountJson);
+            }
+
+            $restClient = FirestoreRest::getInstance($projectId, $serviceAccountJson);
+            $success = $restClient->setDocument('userNewsletterPreferences', $userId, [
+                'subscribed' => $subscribed,
+                'categories' => $categories,
+                'updatedAt' => new \DateTime()
+            ]);
+
+            if (!$success) {
+                http_response_code(500);
+                echo json_encode(['error' => 'Failed to save preferences to database']);
+                return;
+            }
+
+            // Save preferences to session for immediate use
+            $_SESSION['newsletterSubscribed'] = $subscribed;
+            $_SESSION['newsletterCategories'] = $categories;
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Newsletter preferences updated'
+            ]);
 
         } catch (\Exception $e) {
             error_log('Newsletter preference update error: ' . $e->getMessage());

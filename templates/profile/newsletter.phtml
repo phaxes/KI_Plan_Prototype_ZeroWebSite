@@ -105,7 +105,8 @@ document.getElementById('profile-newsletter-form').addEventListener('submit', fu
             }, 1500);
         } else {
             console.error('API error:', status, data);
-            App.showNotification('Fehler: ' + (data.error || 'Unbekannter Fehler'), 'error');
+            const errorMsg = data.details ? `${data.error} (${data.details})` : (data.error || 'Unbekannter Fehler');
+            App.showNotification('Fehler: ' + errorMsg, 'error');
             button.disabled = false;
             button.textContent = originalButtonText;
         }
